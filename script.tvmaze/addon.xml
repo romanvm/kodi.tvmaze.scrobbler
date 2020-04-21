@@ -18,7 +18,7 @@
     <platform>all</platform>
     <summary lang="en_GB">TVmaze scrobbler.</summary>
     <description lang="en_GB">TVmaze scrobbler</description>
-    <license>GPL-3.0-only</license>
+    <license>GPL-3.0-or-later</license>
     <website>https://www.tvmaze.com</website>
     <email>roman1972@gmail.com</email>
     <source>https://github.com/romanvm/kodi.tvmaze.scrobbler</source>
