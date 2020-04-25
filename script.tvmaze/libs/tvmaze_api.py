@@ -32,9 +32,7 @@ SESSION.headers.update({
 
 
 def call_api(url, method='get', **requests_kwargs):
-    headers = requests_kwargs.pop('headers', {})
-    auth = requests_kwargs.pop('auth', None)
-    SESSION.headers.update(headers)
+    auth = requests_kwargs.pop('auth', None)  # Remove auth credentials before logging
     method_func = getattr(SESSION, method, SESSION.get)
     logger.debug('Calling URL "{}"... method: {}, parameters: {}'.format(url, method, requests_kwargs))
     response = method_func(url, auth=auth, **requests_kwargs)
