@@ -24,7 +24,7 @@
     <source>https://github.com/romanvm/kodi.tvmaze.scrobbler</source>
     <assets>
       <icon>recources/images/icon.png</icon>
-      <fanart>resources/images/fanart.jpg</fanart>
+      <fanart>resources/images/background.jpg</fanart>
     </assets>
     <news>0.0.1: Initial release</news>
   </extension>
