@@ -18,8 +18,10 @@
 
 from __future__ import absolute_import, unicode_literals
 
+from kodi_six.xbmc import translatePath
 from kodi_six.xbmcaddon import Addon
 
 ADDON = Addon()
-ID = ADDON.getAddonInfo('id')
+ADDON_ID = ADDON.getAddonInfo('id')
 VERSION = ADDON.getAddonInfo('version')
+PROFILE_DIR = translatePath(ADDON.getAddonInfo('profile'))

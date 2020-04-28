@@ -17,3 +17,11 @@
 """Script entry point"""
 
 from __future__ import absolute_import, unicode_literals
+
+import cgitb
+
+from libs.gui import main_gui
+
+cgitb.enable(context=3, format='text')
+
+main_gui()

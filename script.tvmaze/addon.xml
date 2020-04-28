@@ -9,6 +9,7 @@
     <import addon="script.module.pyxbmct" />
     <import addon="script.module.six" />
     <import addon="script.module.kodi-six" />
+    <import addon="script.module.qrcode" />
   </requires>
   <extension point="xbmc.service" library="service.py" />
   <extension point="xbmc.python.script" library="script.py">

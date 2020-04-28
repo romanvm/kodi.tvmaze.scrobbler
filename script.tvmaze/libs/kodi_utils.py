@@ -23,7 +23,7 @@ from inspect import currentframe
 
 from kodi_six import xbmc
 
-from .addon import ID, VERSION
+from .addon import ADDON_ID, VERSION
 
 try:
     from typing import Text
@@ -40,7 +40,7 @@ class logger(object):
         curr_frame = currentframe()
         xbmc.log(
             cls.FORMAT.format(
-                id=ID,
+                id=ADDON_ID,
                 version=VERSION,
                 filename=os.path.basename(curr_frame.f_back.f_back.f_code.co_filename),
                 lineno=curr_frame.f_back.f_back.f_lineno,
