@@ -23,15 +23,15 @@ from pprint import pformat
 
 from kodi_six import xbmc
 
-from .kodi_utils import logger
+from .kodi_service import logger
 
 try:
-    from typing import Text, Optional, List
+    from typing import Text, Optional, List  # pylint: disable=unused-import
 except ImportError:
     pass
 
 
-class NoDataError(Exception):
+class NoDataError(Exception):  # pylint: disable=missing-docstring
     pass
 
 

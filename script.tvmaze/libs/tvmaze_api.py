@@ -23,10 +23,10 @@ from pprint import pformat
 import requests
 from six import raise_from
 
-from .kodi_utils import logger
+from .kodi_service import logger
 
 try:
-    from typing import Union, Text, List, Optional, Tuple
+    from typing import Union, Text, List, Optional, Tuple  # pylint: disable=unused-import
 except ImportError:
     pass
 
@@ -41,15 +41,19 @@ SESSION.headers.update({
 })
 
 
-class AuthorizationError(Exception):
+class AuthorizationError(Exception):  # pylint: disable=missing-docstring
     pass
 
 
 def call_api(url, method='get', logging=True, **requests_kwargs):
     # type: (Text, Text, bool, **Optional[Union[tuple, dict]]) -> Union[dict, List[dict]]
+    """Call TVmaze API"""
     method_func = getattr(SESSION, method, SESSION.get)
     if logging:
-        logger.debug('Calling URL "{}"... method: {}, parameters: {}'.format(url, method, pformat(requests_kwargs)))
+        logger.debug(
+            'Calling URL "{}"... method: {}, parameters: {}'.format(
+                url, method, pformat(requests_kwargs))
+        )
     response = method_func(url, **requests_kwargs)
     if not response.ok:
         logger.error('TVmaze returned error {}: {}'.format(response.status_code, response.text))
@@ -62,6 +66,11 @@ def call_api(url, method='get', logging=True, **requests_kwargs):
 
 def start_authorization(email):
     # type: (Text) -> Tuple[Text, Text]
+    """
+    Start scraper authorization flow
+
+    :return: (authorization token, confirmation url) tuple
+    """
     url = API_URL + AUTH_START_PATH
     data = {
         'email': email,
@@ -77,6 +86,11 @@ def start_authorization(email):
 
 def poll_authorization(token):
     # type: (Text) -> Optional[Tuple[Text, Text]]
+    """
+    Poll authorization confirmation
+
+    :return: (TVmaze username, API key) tuple
+    """
     url = API_URL + AUTH_POLL_PATH
     try:
         response_data = call_api(url, 'post', logging=False, json={'token': token})

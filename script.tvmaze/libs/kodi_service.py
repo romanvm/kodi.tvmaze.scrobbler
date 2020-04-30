@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-"""Classes and function to interact with Kodi"""
+"""Classes and function to interact with Kodi API"""
 
 from __future__ import absolute_import, unicode_literals
 
@@ -22,16 +22,22 @@ import os
 from inspect import currentframe
 
 from kodi_six import xbmc
-
-from .addon import ADDON_ID, VERSION
+from kodi_six.xbmcaddon import Addon
 
 try:
-    from typing import Text
+    from typing import Text  # pylint: disable=unused-import
 except ImportError:
     pass
 
 
-class logger(object):
+ADDON = Addon()
+ADDON_ID = ADDON.getAddonInfo('id')
+VERSION = ADDON.getAddonInfo('version')
+PROFILE_DIR = xbmc.translatePath(ADDON.getAddonInfo('profile'))
+
+
+class logger(object):  # pylint: disable=invalid-name
+    # pylint: disable=missing-docstring
     FORMAT = '{id} [v.{version}] - {filename}:{lineno} - {message}'
 
     @classmethod

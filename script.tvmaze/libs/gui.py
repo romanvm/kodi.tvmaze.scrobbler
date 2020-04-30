@@ -30,11 +30,11 @@ from kodi_six import xbmc
 from kodi_six.xbmcgui import Dialog
 from six import text_type
 
-from .addon import ADDON, ADDON_ID, PROFILE_DIR
+from .kodi_service import ADDON, ADDON_ID, PROFILE_DIR
 from .tvmaze_api import start_authorization, poll_authorization, AuthorizationError
 
 try:
-    from typing import Text
+    from typing import Text  # pylint: disable=unused-import
 except ImportError:
     pass
 
@@ -42,7 +42,7 @@ DIALOG = Dialog()
 
 
 class ConfirmationLoop(threading.Thread):
-
+    # pylint: disable=missing-docstring
     def __init__(self, parent_window, token):
         # type: (ConfirmationDialog, Text) -> None
         super(ConfirmationLoop, self).__init__()
@@ -74,14 +74,10 @@ class ConfirmationLoop(threading.Thread):
 
 
 class ConfirmationDialog(pyxbmct.AddonDialogWindow):
-
+    # pylint: disable=missing-docstring
     def __init__(self, email, token, confirm_url, qrcode_path):
         # type: (Text, Text, Text, Text) -> None
         super(ConfirmationDialog, self).__init__('Confirm Authorization')
-        self.setGeometry(500, 200, 5, 2)  # Todo: needs to be adjusted
-        self._set_controls()
-        self._set_connections()
-        self._set_navigation()
         self._email = email
         self._confirm_url = confirm_url
         self._qrcode_path = qrcode_path
@@ -90,6 +86,9 @@ class ConfirmationDialog(pyxbmct.AddonDialogWindow):
         self.apikey = ''
         self.error_message = None
         self._confirmation_loop = ConfirmationLoop(self, token)
+        self.setGeometry(500, 200, 5, 2)  # Todo: needs to be adjusted
+        self._set_controls()
+        self._set_connections()
 
     def _set_controls(self):
         textbox = pyxbmct.TextBox()
@@ -105,13 +104,11 @@ class ConfirmationDialog(pyxbmct.AddonDialogWindow):
         self.placeControl(qr_code, 2, 2, 2, 2)
         self._cancel_btn = pyxbmct.Button('Cancel')
         self.placeControl(self._cancel_btn, 4, 0, 2)
+        self.setFocus(self._cancel_btn)
 
     def _set_connections(self):
         self.connect(pyxbmct.ACTION_NAV_BACK, self.close)
         self.connect(self._cancel_btn, self.close)
-
-    def _set_navigation(self):
-        self.setFocus(self._cancel_btn)
 
     def doModal(self):
         self._confirmation_loop.start()
@@ -130,6 +127,12 @@ class ConfirmationDialog(pyxbmct.AddonDialogWindow):
 
 
 def authorize_addon():
+    """
+    Authorize the addon on TVmaze
+
+    The function sends authorization request to TVmaze and saves TVmaze
+    username and API token for scrobbling requests authorization
+    """
     old_username = ADDON.getSettingString('username')
     old_apikey = ADDON.getSettingString('apikey')
     if old_username and old_apikey:
@@ -174,6 +177,7 @@ MAIN_GUI_FUNCTIONS = {
 
 
 def main_gui():
+    """Main scrobbler GUI"""
     monitor = xbmc.Monitor()
     while not monitor.abortRequested():
         result = DIALOG.select('TVmaze Scrobbler', ['Authorize the addon'])
@@ -181,4 +185,3 @@ def main_gui():
         if func is None:
             break
         func()
-
