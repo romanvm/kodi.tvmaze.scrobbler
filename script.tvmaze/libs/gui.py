@@ -130,6 +130,15 @@ class ConfirmationDialog(pyxbmct.AddonDialogWindow):
 
 
 def authorize_addon():
+    old_username = ADDON.getSettingString('username')
+    old_apikey = ADDON.getSettingString('apikey')
+    if old_username and old_apikey:
+        answer = DIALOG.yesno(
+            'TVmaze Scrobbler',
+            'The addon is already authorized.[CR]Authorize again?'
+        )
+        if not answer:
+            return
     keyboard = xbmc.Keyboard(heading='Your TVmaze account email')
     keyboard.doModal()
     if keyboard.isConfirmed():
@@ -159,11 +168,17 @@ def authorize_addon():
         del conformation_dialog
 
 
+MAIN_GUI_FUNCTIONS = {
+    0: authorize_addon,
+}
+
+
 def main_gui():
     monitor = xbmc.Monitor()
     while not monitor.abortRequested():
         result = DIALOG.select('TVmaze Scrobbler', ['Authorize the addon'])
-        if result < 0:
+        func = MAIN_GUI_FUNCTIONS.get(result)
+        if func is None:
             break
-        elif result == 0:
-            authorize_addon()
+        func()
+
