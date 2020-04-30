@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-"""Functions to work with Kodi JSON-RPC API"""
+"""Functions to work with Kodi medialibrary via JSON-RPC API"""
 
 from __future__ import absolute_import, unicode_literals
 
