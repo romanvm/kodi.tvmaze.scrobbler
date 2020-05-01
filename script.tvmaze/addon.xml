@@ -24,7 +24,7 @@
     <email>roman1972@gmail.com</email>
     <source>https://github.com/romanvm/kodi.tvmaze.scrobbler</source>
     <assets>
-      <icon>recources/images/icon.png</icon>
+      <icon>resources/images/icon.png</icon>
       <fanart>resources/images/background.jpg</fanart>
     </assets>
     <news>0.0.1: Initial release</news>
