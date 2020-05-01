@@ -40,6 +40,9 @@ VERSION = ADDON.getAddonInfo('version')
 PROFILE_DIR = xbmc.translatePath(ADDON.getAddonInfo('profile'))
 ADDON_DIR = xbmc.translatePath(ADDON.getAddonInfo('path'))
 
+if not os.path.exists(PROFILE_DIR):
+    os.mkdir(PROFILE_DIR)
+
 
 class logger(object):  # pylint: disable=invalid-name
     # pylint: disable=missing-docstring
