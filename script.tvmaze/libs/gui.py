@@ -30,7 +30,7 @@ from kodi_six import xbmc
 from kodi_six.xbmcgui import Dialog
 from six import text_type
 
-from .kodi_service import ADDON, ADDON_ID, PROFILE_DIR
+from .kodi_service import ADDON, ADDON_ID, PROFILE_DIR, GETTEXT as _
 from .tvmaze_api import start_authorization, poll_authorization, AuthorizationError
 
 try:
@@ -48,10 +48,10 @@ class ConfirmationLoop(threading.Thread):
         super(ConfirmationLoop, self).__init__()
         self._parent_window = weakref.proxy(parent_window)  # type: ConfirmationDialog
         self._token = token
-        self._monitor = xbmc.Monitor()
         self.username = ''
         self.apikey = ''
         self.error_message = None
+        self._monitor = xbmc.Monitor()
         self.stop_event = threading.Event()
 
     def run(self):
@@ -77,7 +77,7 @@ class ConfirmationDialog(pyxbmct.AddonDialogWindow):
     # pylint: disable=missing-docstring
     def __init__(self, email, token, confirm_url, qrcode_path):
         # type: (Text, Text, Text, Text) -> None
-        super(ConfirmationDialog, self).__init__('Confirm Authorization')
+        super(ConfirmationDialog, self).__init__(_('Confirm Addon Authorization'))
         self._email = email
         self._confirm_url = confirm_url
         self._qrcode_path = qrcode_path
@@ -93,16 +93,14 @@ class ConfirmationDialog(pyxbmct.AddonDialogWindow):
     def _set_controls(self):
         textbox = pyxbmct.TextBox()
         self.placeControl(textbox, 0, 0, 2, 2)
-        textbox.setText(
-            'Please check your {email} mailbox for an authorization link[CR]'
-            'or visit the address below to authorize the addon:[CR]{confirm_url}'.format(
+        textbox.setText(_(
+            'Please check your [B]{email}[/B] mailbox for an authorization link[CR]'
+            'or visit the address below to authorize the addon:[CR][B]{confirm_url}[/B]').format(
                 email=self._email,
-                confirm_url=self._confirm_url
-            )
-        )
+                confirm_url=self._confirm_url))
         qr_code = pyxbmct.Image(self._qr_code_path)
         self.placeControl(qr_code, 2, 2, 2, 2)
-        self._cancel_btn = pyxbmct.Button('Cancel')
+        self._cancel_btn = pyxbmct.Button(_('Cancel'))
         self.placeControl(self._cancel_btn, 4, 0, 2)
         self.setFocus(self._cancel_btn)
 
@@ -115,12 +113,11 @@ class ConfirmationDialog(pyxbmct.AddonDialogWindow):
         super(ConfirmationDialog, self).doModal()
         self.username = self._confirmation_loop.username
         self.apikey = self._confirmation_loop.apikey
-        self.username = self._confirmation_loop.username
+        self.error_message = self._confirmation_loop.error_message
         if self.username and self.apikey and self.error_message is None:
             self.is_confirmed = True
 
     def close(self):
-        self.is_confirmed = False
         self._confirmation_loop.stop_event.set()
         self._confirmation_loop.join()
         super(ConfirmationDialog, self).close()
@@ -137,22 +134,22 @@ def authorize_addon():
     old_apikey = ADDON.getSettingString('apikey')
     if old_username and old_apikey:
         answer = DIALOG.yesno(
-            'TVmaze Scrobbler',
-            'The addon is already authorized.[CR]Authorize again?'
+            _('TVmaze Scrobbler'),
+            _('The addon is already authorized.[CR]Authorize again?')
         )
         if not answer:
             return
-    keyboard = xbmc.Keyboard(heading='Your TVmaze account email')
+    keyboard = xbmc.Keyboard(heading=_('Your TVmaze account email'))
     keyboard.doModal()
     if keyboard.isConfirmed():
         email = keyboard.getText()
         if re.search(r'^[\w.\-+]+@[\w.-]+\.[\w]+$', email) is None:
-            DIALOG.notification(ADDON_ID, 'Please enter a valid email', icon='error', time=3000)
+            DIALOG.notification(ADDON_ID, 'Invalid email', icon='error', time=3000)
             return
         try:
             token, confirm_url = start_authorization(email)
         except AuthorizationError as exc:
-            message = 'Authorization error: {}'.format(exc)
+            message = _('Authorization error: {}').format(exc)
             DIALOG.notification(ADDON_ID, message, icon='error')
             return
         qrcode_filename = uuid.uuid4().hex + '.png'
@@ -166,7 +163,7 @@ def authorize_addon():
             ADDON.setSettingString('username', conformation_dialog.username)
             ADDON.setSettingString('apikey', conformation_dialog.apikey)
         elif conformation_dialog.error_message is not None:
-            message = 'Confirmation error: {}'.format(conformation_dialog.error_message)
+            message = _('Confirmation error: {}').format(conformation_dialog.error_message)
             DIALOG.notification(ADDON_ID, message, icon='error')
         del conformation_dialog
 
@@ -180,7 +177,7 @@ def main_gui():
     """Main scrobbler GUI"""
     monitor = xbmc.Monitor()
     while not monitor.abortRequested():
-        result = DIALOG.select('TVmaze Scrobbler', ['Authorize the addon'])
+        result = DIALOG.select(_('TVmaze Scrobbler'), [_('Authorize the addon')])
         func = MAIN_GUI_FUNCTIONS.get(result)
         if func is None:
             break

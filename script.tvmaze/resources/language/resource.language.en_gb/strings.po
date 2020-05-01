@@ -1,0 +1,48 @@
+# Kodi Media Center language file
+# Translators: put your translations in msgstr lines. Preserve items in curly {} and square [] brackets.
+msgid ""
+msgstr ""
+
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: en\n"
+
+msgctxt "#32000"
+msgid "General"
+msgstr ""
+
+msgctxt "#32001"
+msgid "Confirm Addon Authorization"
+msgstr ""
+
+msgctxt "#32002"
+msgid "Please check your [B]{email}[/B] mailbox for an authorization link[CR]or visit the address below to authorize the addon:[CR][B]{confirm_url}[/B]"
+msgstr ""
+
+msgctxt "#32003"
+msgid "Cancel"
+msgstr ""
+
+msgctxt "#32004"
+msgid "TVmaze Scrobbler"
+msgstr ""
+
+msgctxt "#32005"
+msgid "The addon is already authorized.[CR]Authorize again?"
+msgstr ""
+
+msgctxt "#32006"
+msgid "Your TVmaze account email"
+msgstr ""
+
+msgctxt "#32007"
+msgid "Authorization error: {}"
+msgstr ""
+
+msgctxt "#32008"
+msgid "Confirmation error: {}"
+msgstr ""
+
+msgctxt "#32009"
+msgid "Authorize the addon"
+msgstr ""
