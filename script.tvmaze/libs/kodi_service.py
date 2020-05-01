@@ -94,7 +94,7 @@ class LocalizationService(object):
         )
         if not os.path.exists(self._en_gb_string_po_path):
             raise self.LocalizationError('Missing English strings.po localization file')
-        self._string_mapping_path = os.path.join(PROFILE_DIR, 'strings-map.json')
+        self._string_mapping_path = os.path.join(PROFILE_DIR, 'strings-map.pickle')
         self._mapping = self._load_strings_mapping()  # type: Dict[Text, int]
 
     def _load_strings_po(self):  # pylint: disable=missing-docstring
