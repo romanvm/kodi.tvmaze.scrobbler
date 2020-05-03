@@ -16,7 +16,7 @@ msgid "Confirm Addon Authorization"
 msgstr ""
 
 msgctxt "#32002"
-msgid "Please check your [B]{email}[/B] mailbox for an authorization link[CR]or visit the address below to authorize the addon:[CR][B]{confirm_url}[/B]"
+msgid "To authorize the addon open the link below[CR][B]{confirm_url}[/B][CR]or check your mailbox[CR][B]{email}[/B]"
 msgstr ""
 
 msgctxt "#32003"
@@ -45,4 +45,8 @@ msgstr ""
 
 msgctxt "#32009"
 msgid "Authorize the addon"
+msgstr ""
+
+msgctxt "#32010"
+msgid "Invalid email"
 msgstr ""

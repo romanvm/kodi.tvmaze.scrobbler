@@ -45,22 +45,21 @@ class AuthorizationError(Exception):  # pylint: disable=missing-docstring
     pass
 
 
-def call_api(url, method='get', logging=True, **requests_kwargs):
-    # type: (Text, Text, bool, **Optional[Union[tuple, dict]]) -> Union[dict, List[dict]]
+def call_api(url, method='get', **requests_kwargs):
+    # type: (Text, Text, **Optional[Union[tuple, dict]]) -> Union[dict, List[dict]]
     """Call TVmaze API"""
     method_func = getattr(SESSION, method, SESSION.get)
-    if logging:
-        logger.debug(
-            'Calling URL "{}"... method: {}, parameters: {}'.format(
-                url, method, pformat(requests_kwargs))
-        )
-    response = method_func(url, **requests_kwargs)
+    auth = requests_kwargs.pop('auth', None)  # Remove credentials before logging
+    logger.debug(
+        'Calling URL "{}"... method: {}, parameters: {}'.format(
+            url, method, pformat(requests_kwargs))
+    )
+    response = method_func(url, auth=auth, **requests_kwargs)
     if not response.ok:
         logger.error('TVmaze returned error {}: {}'.format(response.status_code, response.text))
         response.raise_for_status()
     response_json = response.json()
-    if logging:
-        logger.debug('TVmaze API response:\n{}'.format(pformat(response_json)))
+    logger.debug('TVmaze API response:\n{}'.format(pformat(response_json)))
     return response_json
 
 
@@ -77,10 +76,9 @@ def start_authorization(email):
         'email_confirmation': True,
     }
     try:
-        response_data = call_api(url, 'post', logging=False, json=data)
+        response_data = call_api(url, 'post', json=data)
     except requests.exceptions.HTTPError as exc:
-        message = exc.response.json().get('message', 'unknown')
-        raise_from(AuthorizationError(message), exc)
+        raise_from(AuthorizationError(exc.response.text), exc)
     return response_data.get('token'), response_data.get('confirm_url')
 
 
@@ -93,10 +91,9 @@ def poll_authorization(token):
     """
     url = API_URL + AUTH_POLL_PATH
     try:
-        response_data = call_api(url, 'post', logging=False, json={'token': token})
+        response_data = call_api(url, 'post', json={'token': token})
     except requests.exceptions.HTTPError as exc:
         if exc.response.status_code == 403:
             return None
-        message = exc.response.json().get('message', 'unknown')
-        raise_from(AuthorizationError(message), exc)
+        raise_from(AuthorizationError(exc.response.text), exc)
     return response_data.get('username'), response_data.get('apikey')
