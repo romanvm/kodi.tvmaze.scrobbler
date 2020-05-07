@@ -18,10 +18,8 @@
 
 from __future__ import absolute_import, unicode_literals
 
-import cgitb
-
 from libs.gui import main_gui
+from libs.kodi_service import debug_exception
 
-cgitb.enable(context=3, format='text')
-
-main_gui()
+with debug_exception():
+    main_gui()

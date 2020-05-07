@@ -19,9 +19,13 @@
 from __future__ import absolute_import, unicode_literals
 
 import hashlib
+import inspect
 import os
 import re
-from inspect import currentframe
+import sys
+from contextlib import contextmanager
+from platform import uname
+from pprint import pformat
 
 import six
 from six.moves import cPickle as pickle
@@ -29,7 +33,7 @@ from kodi_six import xbmc
 from kodi_six.xbmcaddon import Addon
 
 try:
-    from typing import Text, Dict  # pylint: disable=unused-import
+    from typing import Text, Dict, Callable, Generator  # pylint: disable=unused-import
 except ImportError:
     pass
 
@@ -51,7 +55,7 @@ class logger(object):  # pylint: disable=invalid-name
     @classmethod
     def _write_message(cls, message, level=xbmc.LOGDEBUG):
         # type: (Text, int) -> None
-        curr_frame = currentframe()
+        curr_frame = inspect.currentframe()
         xbmc.log(
             cls.FORMAT.format(
                 id=ADDON_ID,
@@ -166,3 +170,108 @@ class LocalizationService(object):
 
 
 GETTEXT = LocalizationService().gettext
+
+
+def _format_vars(variables):
+    # type: (dict) -> Text
+    """
+    Format variables dictionary
+
+    :param variables: variables dict
+    :return: formatted string with sorted ``var = val`` pairs
+    """
+    var_list = [(var, val) for var, val in six.iteritems(variables)
+                if not (var.startswith('__') or var.endswith('__'))]
+    var_list.sort(key=lambda i: i[0])
+    lines = []
+    for var, val in var_list:
+        lines.append('{} = {}'.format(var, pformat(val)))
+    return '\n'.join(lines)
+
+
+def _format_code_context(frame_info):
+    # type: (tuple) -> Text
+    context = ''
+    if frame_info[4] is not None:
+        for i, line in enumerate(frame_info[4], frame_info[2] - frame_info[5]):
+            if i == frame_info[2]:
+                context += '{}:>{}'.format(six.text_type(i).rjust(5), line)
+            else:
+                context += '{}: {}'.format(six.text_type(i).rjust(5), line)
+    return context
+
+
+EXCEPTION_TEMPLATE = """
+*********************************** Unhandled exception detected ***********************************
+====================================================================================================
+                                           Diagnostic info
+----------------------------------------------------------------------------------------------------
+Exception type  : {exc_type}
+Exception value : {exc}
+System info     : {system_info}
+Python version  : {python_version}
+OS info         : {os_info}
+Kodi version    : {kodi_version}
+File            : {file_path}:{lineno}
+----------------------------------------------------------------------------------------------------
+Code context:
+{code_context}
+----------------------------------------------------------------------------------------------------
+Global variables:
+{global_vars}
+----------------------------------------------------------------------------------------------------
+Local variables:
+{local_vars}
+====================================================================================================
+**************************************** End diagnostic info ***************************************
+"""
+
+
+@contextmanager
+def debug_exception(logger_func=logger.error):
+    # type: (Callable[[Text], None]) -> Generator[None]
+    """
+    Diagnostic helper context manager
+
+    It controls execution within its context and writes extended
+    diagnostic info to the Kodi log if an unhandled exception
+    happens within the context. The info includes the following items:
+
+    - System info
+    - Python version
+    - Kodi version
+    - Module path.
+    - Code fragment where the exception has happened.
+    - Global variables.
+    - Local variables.
+
+    After logging the diagnostic info the exception is re-raised.
+
+    Example::
+
+        with debug_exception():
+            # Some risky code
+            raise RuntimeError('Fatal error!')
+
+    :param logger_func: logger function that accepts a single argument
+        that is a log message.
+    """
+    try:
+        yield
+    except Exception as exc:
+        frame_info = inspect.trace(5)[-1]
+        message = EXCEPTION_TEMPLATE.format(
+            exc_type=type(exc),
+            exc=exc,
+            system_info=uname(),
+            python_version=sys.version.replace('\n', ' '),
+            os_info=xbmc.getInfoLabel('System.OSVersionInfo'),
+            kodi_version=xbmc.getInfoLabel('System.BuildVersion'),
+            file_path=frame_info[1],
+            lineno=frame_info[2],
+            code_context=_format_code_context(frame_info),
+            global_vars=_format_vars(frame_info[0].f_globals),
+            local_vars=_format_vars(frame_info[0].f_locals)
+        )
+        logger_func(message)
+        raise exc

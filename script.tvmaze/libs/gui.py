@@ -95,7 +95,7 @@ class ConfirmationDialog(pyxbmct.AddonDialogWindow):
         self.placeControl(textbox, 0, 0, 2, 5)
         textbox.setText(_(
             'To authorize the addon open the link below[CR]'
-            '[B]{confirm_url}[B][CR]'
+            '[B]{confirm_url}[/B][CR]'
             'or check your mailbox[CR][B]{email}[/B]').format(
                 confirm_url=self._confirm_url,
                 email=self._email))
