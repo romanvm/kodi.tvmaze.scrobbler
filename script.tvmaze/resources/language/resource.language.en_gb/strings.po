@@ -24,7 +24,7 @@ msgid "Cancel"
 msgstr ""
 
 msgctxt "#32004"
-msgid "TVmaze Scrobbler"
+msgid "TVmaze Scrobbler Menu"
 msgstr ""
 
 msgctxt "#32005"

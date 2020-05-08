@@ -180,7 +180,7 @@ def main_gui():
     """Main scrobbler GUI"""
     monitor = xbmc.Monitor()
     while not monitor.abortRequested():
-        result = DIALOG.select(_('TVmaze Scrobbler'), [_('Authorize the addon')])
+        result = DIALOG.select(_('TVmaze Scrobbler Menu'), [_('Authorize the addon')])
         func = MAIN_GUI_FUNCTIONS.get(result)
         if func is None:
             break
