@@ -59,7 +59,6 @@ def call_api(url, method='get', **requests_kwargs):
         logger.error('TVmaze returned error {}: {}'.format(response.status_code, response.text))
         response.raise_for_status()
     response_json = response.json()
-    logger.debug('TVmaze API response:\n{}'.format(pformat(response_json)))
     return response_json
 
 
