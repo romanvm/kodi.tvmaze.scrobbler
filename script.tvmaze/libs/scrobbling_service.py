@@ -30,7 +30,6 @@ from .tvmaze_api import UpdateError, send_episodes
 
 try:
     from typing import Text, Dict, Any, Optional, List, Tuple  # pylint: disable=unused-import
-    from xbmcgui import DialogProgressBG  # pylint: disable=unused-import
 except ImportError:
     pass
 
