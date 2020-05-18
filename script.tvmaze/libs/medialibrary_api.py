@@ -26,7 +26,7 @@ from kodi_six import xbmc
 from .kodi_service import logger
 
 try:
-    from typing import Text, Optional, List  # pylint: disable=unused-import
+    from typing import Text, Optional, List, Dict, Any  # pylint: disable=unused-import
 except ImportError:
     pass
 
@@ -36,7 +36,7 @@ class NoDataError(Exception):  # pylint: disable=missing-docstring
 
 
 def send_json_rpc(method, params=None):
-    # type: (Text, Optional[dict]) -> dict
+    # type: (Text, Optional[Dict[Text, Any]]) -> dict
     """
     Send JSON-RPC to Kodi
     """
@@ -50,7 +50,7 @@ def send_json_rpc(method, params=None):
 
 
 def get_tvshows():
-    # type: () -> List[dict]
+    # type: () -> List[Dict[Text, Any]]
     """
     Get te list of TV shows from the Kodi database
     :return: the list of TV show data as Python dicts.
@@ -75,7 +75,7 @@ def get_tvshows():
 
 
 def get_episodes(tvshowid):
-    # type: (int) -> List[dict]
+    # type: (int) -> List[Dict[Text, Any]]
     """
     Get the list of episodes from a specific TV show
 
@@ -103,7 +103,7 @@ def get_episodes(tvshowid):
 
 
 def get_recent_episodes():
-    # type: () -> List[dict]
+    # type: () -> List[Dict[Text, Any]]
     """
     Get the list of recently added episodes
 
@@ -118,7 +118,7 @@ def get_recent_episodes():
 
 
 def get_episode_details(episode_id):
-    # type: (int) -> dict
+    # type: (int) -> Dict[Text, Any]
     """
     Get episode details
 

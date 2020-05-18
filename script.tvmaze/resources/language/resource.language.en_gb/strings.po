@@ -50,3 +50,15 @@ msgstr ""
 msgctxt "#32010"
 msgid "Invalid email"
 msgstr ""
+
+msgctxt "#32011"
+msgid "TVmaze Scrobbler"
+msgstr ""
+
+msgctxt "#32012"
+msgid "Updating episodes"
+msgstr ""
+
+msgctxt "#32013"
+msgid "Updating episodes for show \"{show_name}\": {count}/{total}"
+msgstr ""

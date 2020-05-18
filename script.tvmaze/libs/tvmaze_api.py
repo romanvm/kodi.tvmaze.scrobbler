@@ -15,24 +15,25 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 """Functions to work with TVmaze API"""
+# pylint: disable=missing-docstring
 
 from __future__ import absolute_import, unicode_literals
 
 from pprint import pformat
 
 import requests
-from six import raise_from
 
-from .kodi_service import logger
+from .kodi_service import logger, ADDON
 
 try:
-    from typing import Union, Text, List, Optional, Tuple  # pylint: disable=unused-import
+    from typing import Union, Text, List, Optional, Tuple, Dict  # pylint: disable=unused-import
 except ImportError:
     pass
 
 API_URL = 'https://api.staging.tvmaze.net/v1'
 AUTH_START_PATH = '/auth/start'
 AUTH_POLL_PATH = '/auth/poll'
+SCROBBLE_SHOWS_PATH = '/scrobble/shows'
 
 SESSION = requests.Session()
 SESSION.headers.update({
@@ -41,12 +42,23 @@ SESSION.headers.update({
 })
 
 
-class AuthorizationError(Exception):  # pylint: disable=missing-docstring
+class AuthorizationError(Exception):
     pass
 
 
+class UpdateError(Exception):
+    pass
+
+
+def _get_credentials():
+    # type: () -> Tuple[Text, Text]
+    username = ADDON.getSettingString('username')
+    apikey = ADDON.getSettingString('apikey')
+    return username, apikey
+
+
 def call_api(url, method='get', **requests_kwargs):
-    # type: (Text, Text, **Optional[Union[tuple, dict]]) -> Union[dict, List[dict]]
+    # type: (Text, Text, **Optional[Union[tuple, dict, list]]) -> requests.Response
     """Call TVmaze API"""
     method_func = getattr(SESSION, method, SESSION.get)
     auth = requests_kwargs.pop('auth', None)  # Remove credentials before logging
@@ -58,8 +70,7 @@ def call_api(url, method='get', **requests_kwargs):
     if not response.ok:
         logger.error('TVmaze returned error {}: {}'.format(response.status_code, response.text))
         response.raise_for_status()
-    response_json = response.json()
-    return response_json
+    return response
 
 
 def start_authorization(email):
@@ -75,9 +86,10 @@ def start_authorization(email):
         'email_confirmation': True,
     }
     try:
-        response_data = call_api(url, 'post', json=data)
+        response = call_api(url, 'post', json=data)
     except requests.exceptions.HTTPError as exc:
-        raise_from(AuthorizationError(exc.response.text), exc)
+        raise AuthorizationError(exc.response.text)
+    response_data = response.json()
     return response_data.get('token'), response_data.get('confirm_url')
 
 
@@ -90,9 +102,35 @@ def poll_authorization(token):
     """
     url = API_URL + AUTH_POLL_PATH
     try:
-        response_data = call_api(url, 'post', json={'token': token})
+        response = call_api(url, 'post', json={'token': token})
     except requests.exceptions.HTTPError as exc:
         if exc.response.status_code == 403:
             return None
-        raise_from(AuthorizationError(exc.response.text), exc)
+        raise AuthorizationError(exc.response.text)
+    response_data = response.json()
     return response_data.get('username'), response_data.get('apikey')
+
+
+def send_episodes(episodes, show_id, provider):
+    # type: (List[Dict[Text, int]], Text, Text) -> None
+    """
+    Send statuses of episodes to TVmase
+
+    :param episodes: the list of episodes to update
+    :param show_id: TV show ID in tvmaze, thetvdb or imdb online databases
+    :param provider: ID provider
+    :raises UpdateError: on update error
+    """
+    username, apikey = _get_credentials()
+    if not (username and apikey):
+        raise UpdateError('Missing TVmaze username and API key')
+    provider += '_id'
+    url = API_URL + SCROBBLE_SHOWS_PATH
+    params = {provider: show_id}
+    try:
+        response = call_api(url, 'post', params=params, json=episodes, auth=(username, apikey))
+    except requests.exceptions.HTTPError as exc:
+        raise UpdateError(
+            'status: {}, message: {}'.format(exc.response.status_code, exc.response.text))
+    if response.status_code == 207:
+        logger.warning('Unable to update some episode info: {}'.format(response.text))

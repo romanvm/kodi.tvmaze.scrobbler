@@ -15,7 +15,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 """GUI-related classes and functions"""
-# Todo: Add localization support
+# pylint: disable=missing-docstring
 from __future__ import absolute_import, unicode_literals
 
 import os
@@ -23,18 +23,19 @@ import re
 import threading
 import uuid
 import weakref
+from contextlib import contextmanager
 
 import pyqrcode
 import pyxbmct
 from kodi_six import xbmc
-from kodi_six.xbmcgui import Dialog
+from kodi_six.xbmcgui import Dialog, DialogProgressBG
 from six import text_type
 
 from .kodi_service import ADDON, ADDON_ID, PROFILE_DIR, GETTEXT as _, logger
 from .tvmaze_api import start_authorization, poll_authorization, AuthorizationError
 
 try:
-    from typing import Text  # pylint: disable=unused-import
+    from typing import Text, Generator  # pylint: disable=unused-import
 except ImportError:
     pass
 
@@ -42,7 +43,6 @@ DIALOG = Dialog()
 
 
 class ConfirmationLoop(threading.Thread):
-    # pylint: disable=missing-docstring
     def __init__(self, parent_window, token):
         # type: (ConfirmationDialog, Text) -> None
         super(ConfirmationLoop, self).__init__()
@@ -74,7 +74,6 @@ class ConfirmationLoop(threading.Thread):
 
 
 class ConfirmationDialog(pyxbmct.AddonDialogWindow):
-    # pylint: disable=missing-docstring
     def __init__(self, email, token, confirm_url, qrcode_path):
         # type: (Text, Text, Text, Text) -> None
         super(ConfirmationDialog, self).__init__(_('Confirm Addon Authorization'))
@@ -122,6 +121,17 @@ class ConfirmationDialog(pyxbmct.AddonDialogWindow):
         self._confirmation_loop.stop_event.set()
         self._confirmation_loop.join()
         self.close()
+
+
+@contextmanager
+def background_progress_dialog(heading, message):
+    # type: (Text, Text) -> Generator[DialogProgressBG, None, None]
+    dialog = DialogProgressBG()
+    dialog.create(heading, message)
+    try:
+        yield dialog
+    finally:
+        dialog.close()
 
 
 def authorize_addon():
