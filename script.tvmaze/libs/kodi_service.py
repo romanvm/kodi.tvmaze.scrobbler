@@ -213,6 +213,10 @@ Python version  : {python_version}
 OS info         : {os_info}
 Kodi version    : {kodi_version}
 File            : {file_path}:{lineno}
+sys.argv        : {sys_argv}
+----------------------------------------------------------------------------------------------------
+sys.path:
+{sys_path}
 ----------------------------------------------------------------------------------------------------
 Code context:
 {code_context}
@@ -269,6 +273,8 @@ def debug_exception(logger_func=logger.error):
             kodi_version=xbmc.getInfoLabel('System.BuildVersion'),
             file_path=frame_info[1],
             lineno=frame_info[2],
+            sys_argv=pformat(sys.argv),
+            sys_path=pformat(sys.path),
             code_context=_format_code_context(frame_info),
             global_vars=_format_vars(frame_info[0].f_globals),
             local_vars=_format_vars(frame_info[0].f_locals)
