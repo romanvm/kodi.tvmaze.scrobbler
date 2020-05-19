@@ -30,7 +30,7 @@ try:
 except ImportError:
     pass
 
-API_URL = 'https://api.staging.tvmaze.net/v1'
+API_URL = 'https://api.staging.tvmaze.net/v1'  # Fixme: replace this with the prod API URL
 AUTH_START_PATH = '/auth/start'
 AUTH_POLL_PATH = '/auth/poll'
 SCROBBLE_SHOWS_PATH = '/scrobble/shows'
