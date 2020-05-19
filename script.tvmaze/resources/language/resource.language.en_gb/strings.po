@@ -62,3 +62,15 @@ msgstr ""
 msgctxt "#32013"
 msgid "Updating episodes for show \"{show_name}\": {count}/{total}"
 msgstr ""
+
+msgctxt "#32014"
+msgid "Update all shows"
+msgstr ""
+
+msgctxt "#32015"
+msgid "Update finished"
+msgstr ""
+
+msgctxt "#32016"
+msgid "Update finished with errors"
+msgstr ""

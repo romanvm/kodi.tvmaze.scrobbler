@@ -63,7 +63,7 @@ def call_api(url, method='get', **requests_kwargs):
     method_func = getattr(SESSION, method, SESSION.get)
     auth = requests_kwargs.pop('auth', None)  # Remove credentials before logging
     logger.debug(
-        'Calling URL "{}"... method: {}, parameters: {}'.format(
+        'Calling URL "{}"... method: {}, parameters:\n{}'.format(
             url, method, pformat(requests_kwargs))
     )
     response = method_func(url, auth=auth, **requests_kwargs)

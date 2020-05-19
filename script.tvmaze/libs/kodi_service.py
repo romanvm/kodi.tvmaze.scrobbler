@@ -43,6 +43,7 @@ ADDON_ID = ADDON.getAddonInfo('id')
 VERSION = ADDON.getAddonInfo('version')
 PROFILE_DIR = xbmc.translatePath(ADDON.getAddonInfo('profile'))
 ADDON_DIR = xbmc.translatePath(ADDON.getAddonInfo('path'))
+ICON = xbmc.translatePath(ADDON.getAddonInfo('icon'))
 
 if not os.path.exists(PROFILE_DIR):
     os.mkdir(PROFILE_DIR)
@@ -146,7 +147,7 @@ class LocalizationService(object):
         :param strings_po: the content of strings.po file as a text string
         :return: UI strings mapping
         """
-        id_string_pairs = re.findall(r'^msgctxt "#(\d+?)"\r?\nmsgid "([^"]*?)"$', strings_po, re.M)
+        id_string_pairs = re.findall(r'^msgctxt "#(\d+?)"\r?\nmsgid "(.*)"\r?$', strings_po, re.M)
         return {string: int(string_id) for string_id, string in id_string_pairs if string}
 
     def gettext(self, en_string):
@@ -159,13 +160,9 @@ class LocalizationService(object):
         """
         try:
             string_id = self._mapping[en_string]
-        except KeyError as exc:
-            six.raise_from(
-                self.LocalizationError(
-                    'Unable to find English string "{}" in strings.po'.format(en_string)
-                ),
-                exc
-            )
+        except KeyError:
+            raise self.LocalizationError(
+                'Unable to find English string "{}" in strings.po'.format(en_string))
         return ADDON.getLocalizedString(string_id)
 
 

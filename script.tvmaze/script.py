@@ -18,8 +18,30 @@
 
 from __future__ import absolute_import, unicode_literals
 
-from libs.gui import main_gui
-from libs.kodi_service import debug_exception
+from kodi_six import xbmcgui
 
-with debug_exception():
-    main_gui()
+from libs.actions import authorize_addon, send_all_episodes_to_tvmaze
+from libs.kodi_service import debug_exception, GETTEXT
+
+_ = GETTEXT
+
+ACTIONS = {
+    0: send_all_episodes_to_tvmaze,
+    1: authorize_addon,
+}
+
+
+def main():
+    """Main scrobbler menu"""
+    result = xbmcgui.Dialog().select(_('TVmaze Scrobbler Menu'), [
+        _('Update all shows'),
+        _('Authorize the addon'),
+    ])
+    if result >= 0:
+        action = ACTIONS[result]
+        action()
+
+
+if __name__ == '__main__':
+    with debug_exception():
+        main()

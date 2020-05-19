@@ -18,21 +18,17 @@
 # pylint: disable=missing-docstring
 from __future__ import absolute_import, unicode_literals
 
-import os
-import re
 import threading
-import uuid
 import weakref
 from contextlib import contextmanager
 
-import pyqrcode
 import pyxbmct
 from kodi_six import xbmc
 from kodi_six.xbmcgui import Dialog, DialogProgressBG
 from six import text_type
 
-from .kodi_service import ADDON, ADDON_ID, PROFILE_DIR, GETTEXT as _, logger
-from .tvmaze_api import start_authorization, poll_authorization, AuthorizationError
+from .kodi_service import GETTEXT as _
+from .tvmaze_api import poll_authorization, AuthorizationError
 
 try:
     from typing import Text, Generator  # pylint: disable=unused-import
@@ -132,66 +128,3 @@ def background_progress_dialog(heading, message):
         yield dialog
     finally:
         dialog.close()
-
-
-def authorize_addon():
-    """
-    Authorize the addon on TVmaze
-
-    The function sends authorization request to TVmaze and saves TVmaze
-    username and API token for scrobbling requests authorization
-    """
-    old_username = ADDON.getSettingString('username')
-    old_apikey = ADDON.getSettingString('apikey')
-    if old_username and old_apikey:
-        answer = DIALOG.yesno(
-            _('TVmaze Scrobbler'),
-            _('The addon is already authorized.[CR]Authorize again?')
-        )
-        if not answer:
-            return
-    keyboard = xbmc.Keyboard(heading=_('Your TVmaze account email'))
-    keyboard.doModal()
-    if keyboard.isConfirmed():
-        email = keyboard.getText()
-        if re.search(r'^[\w.\-+]+@[\w.-]+\.[\w]+$', email) is None:
-            logger.error('Invalid email: {}'.format(email))
-            DIALOG.notification(ADDON_ID, _('Invalid email'), icon='error', time=3000)
-            return
-        try:
-            token, confirm_url = start_authorization(email)
-        except AuthorizationError as exc:
-            logger.error('TVmaze authorization error: {}'.format(exc))
-            message = _('Authorization error: {}').format(exc)
-            DIALOG.notification(ADDON_ID, message, icon='error')
-            return
-        qrcode_filename = uuid.uuid4().hex + '.png'
-        qrcode_path = os.path.join(PROFILE_DIR, qrcode_filename)
-        qrcode_image = pyqrcode.create(confirm_url)
-        qrcode_image.png(qrcode_path, scale=10)
-        confirmation_dialog = ConfirmationDialog(email, token, confirm_url, qrcode_path)
-        confirmation_dialog.doModal()
-        if confirmation_dialog.is_confirmed:
-            ADDON.setSettingString('username', confirmation_dialog.username)
-            ADDON.setSettingString('apikey', confirmation_dialog.apikey)
-        elif confirmation_dialog.error_message is not None:
-            logger.error('Confirmation error: {}'.format(confirmation_dialog.error_message))
-            message = _('Confirmation error: {}').format(confirmation_dialog.error_message)
-            DIALOG.notification(ADDON_ID, message, icon='error')
-        del confirmation_dialog
-
-
-MAIN_GUI_FUNCTIONS = {
-    0: authorize_addon,
-}
-
-
-def main_gui():
-    """Main scrobbler GUI"""
-    monitor = xbmc.Monitor()
-    while not monitor.abortRequested():
-        result = DIALOG.select(_('TVmaze Scrobbler Menu'), [_('Authorize the addon')])
-        func = MAIN_GUI_FUNCTIONS.get(result)
-        if func is None:
-            break
-        func()

@@ -21,35 +21,40 @@
 from __future__ import absolute_import, division, unicode_literals
 
 import time
-from pprint import pformat
-
-from .gui import background_progress_dialog
-from .kodi_service import logger, LocalizationService
-from .medialibrary_api import NoDataError, get_tvshows, get_episodes
-from .tvmaze_api import UpdateError, send_episodes
 
 try:
-    from typing import Text, Dict, Any, Optional, List, Tuple  # pylint: disable=unused-import
+    from typing import Text, Dict, Any, List, Tuple  # pylint: disable=unused-import
 except ImportError:
     pass
-
-_ = LocalizationService().gettext
 
 SUPPORTED_IDS = ('tvmaze', 'tvdb', 'imdb')
 
 
-def _get_unique_id(unique_ids):
-    # type: (Dict[Text, Text]) -> Optional[Tuple[Text, Text]]
+class StatusType(object):  # pylint: disable=too-few-public-methods
+    WATCHED = 0
+    ACQUIRED = 1
+    SKIPPED = 2
+
+
+def get_unique_id(unique_ids):
+    # type: (Dict[Text, Text]) -> Tuple[Text, Text]
+    """
+    Get a show ID in one of the supported online databases
+
+    :param unique_ids: uniqueid dict from Kodi JSON-RPC API
+    :return: a tuple of unique ID and online data provider
+    :raises LookupError: if a unique ID cannot be determined
+    """
     for provider in SUPPORTED_IDS:
         unique_id = unique_ids.get(provider)
         if unique_id is not None:
             if provider == 'tvdb':
                 provider = 'thetvdb'
-                return unique_id, provider
-    return None
+            return unique_id, provider
+    raise LookupError
 
 
-def _prepare_episode_list(kodi_episode_list):
+def prepare_episode_list(kodi_episode_list):
     # type: (List[Dict[Text, Any]]) -> List[Dict[Text, int]]
     episodes_for_tvmaze = []
     for episode in kodi_episode_list:
@@ -58,51 +63,6 @@ def _prepare_episode_list(kodi_episode_list):
                 'season': episode['season'],
                 'episode': episode['episode'],
                 'marked_at': int(time.time()),
-                'type': 1 if episode['playcount'] else 0,
+                'type': StatusType.WATCHED if episode['playcount'] else StatusType.ACQUIRED,
             })
     return episodes_for_tvmaze
-
-
-def send_all_episodes_to_tvmaze():
-    # type: () -> None
-    """
-    Fetch the list of all episodes from medialibrary and send watched statuses to TVmaze
-    """
-    logger.info('Sending all episodes info to TVmaze')
-    with background_progress_dialog(_('TVmaze Scrobbler'), _('Updating episodes')) as dialog:
-        try:
-            tv_shows = get_tvshows()
-        except NoDataError:
-            logger.warning('Medialibrary has no TV shows')
-            return
-        logger.debug('TV shows from Kodi:\n{}'.format(pformat(tv_shows)))
-        shows_count = len(tv_shows)
-        for n, show in enumerate(tv_shows, 1):
-            percent = int(100 * n / shows_count)
-            message = _('Updating episodes for show \"{}\": {}/{}').format(
-                show_name=show['label'],
-                count=n,
-                total=shows_count
-            )
-            dialog.update(percent, _('TVmaze Scrobbler'), message)
-            unique_id = _get_unique_id(show['uniqueid'])
-            if unique_id is None:
-                logger.warning(
-                    'Unable to determine unique id from show info: {}'.format(pformat(show)))
-                continue
-            try:
-                episodes = get_episodes(show['tvshowid'])
-            except NoDataError:
-                logger.warning('TV show "{}" has no episodes'.format(show['label']))
-                continue
-            logger.debug('"{}" episodes from Kodi:\n{}'.format(show['label'], episodes))
-            episodes_for_tvmaze = _prepare_episode_list(episodes)
-            logger.debug(
-                '"{}" episodes for TVmaze:\n{}'.format(show['label'], pformat(episodes_for_tvmaze)))
-            show_id, provider = unique_id
-            try:
-                send_episodes(episodes_for_tvmaze, show_id, provider)
-            except UpdateError as exc:
-                logger.error(
-                    'Unable to update episodes for show "{}": {}'.format(show['label'], exc))
-                continue
