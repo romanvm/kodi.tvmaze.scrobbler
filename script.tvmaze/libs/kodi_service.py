@@ -230,7 +230,7 @@ Local variables:
 
 @contextmanager
 def debug_exception(logger_func=logger.error):
-    # type: (Callable[[Text], None]) -> Generator[None]
+    # type: (Callable[[Text], None]) -> Generator[None, None, None]
     """
     Diagnostic helper context manager
 
