@@ -20,8 +20,8 @@ from __future__ import absolute_import, unicode_literals
 
 from kodi_six import xbmcgui
 
-from libs.actions import authorize_addon, send_all_episodes_to_tvmaze
 from libs.kodi_service import debug_exception, GETTEXT
+from libs.scrobbling_service import authorize_addon, send_all_episodes_to_tvmaze
 
 _ = GETTEXT
 
