@@ -21,11 +21,19 @@
 from __future__ import absolute_import, division, unicode_literals
 
 import time
+from pprint import pformat
+
+from .gui import DIALOG
+from .kodi_service import logger, ADDON_ID, ICON, GETTEXT
+from .medialibrary_api import get_episode_details, get_tvshow_details
+from .tvmaze_api import UpdateError, send_episodes
 
 try:
     from typing import Text, Dict, Any, List, Tuple  # pylint: disable=unused-import
 except ImportError:
     pass
+
+_ = GETTEXT
 
 SUPPORTED_IDS = ('tvmaze', 'tvdb', 'imdb')
 
@@ -66,3 +74,25 @@ def prepare_episode_list(kodi_episode_list):
                 'type': StatusType.WATCHED if episode['playcount'] else StatusType.ACQUIRED,
             })
     return episodes_for_tvmaze
+
+
+def update_single_episode(episode_id):
+    # type: (int) -> None
+    """Update watched status for a single episode"""
+    episode_details = get_episode_details(episode_id)
+    tvshow_details = get_tvshow_details(episode_details['tvshowid'])
+    try:
+        unique_id, provider = get_unique_id(tvshow_details['uniqueid'])
+    except LookupError:
+        logger.error(
+            'Unable to determine unique id from show info: {}'.format(pformat(tvshow_details)))
+        return
+    episodes_for_tvmaze = prepare_episode_list([episode_details])
+    try:
+        send_episodes(episodes_for_tvmaze, unique_id, provider)
+    except UpdateError as exc:
+        logger.error('Failed to update episode status:\n{}Error: {}'.format(episode_details, exc))
+        DIALOG.notification(ADDON_ID, _('Failed to update episode status'), icon='error')
+    else:
+        DIALOG.notification(
+            ADDON_ID, _('Episode status updated'), icon=ICON, time=3000, sound=False)

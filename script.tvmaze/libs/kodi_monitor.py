@@ -14,14 +14,29 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-"""Service entry point"""
+"""Monitor Kodi medialibrary updates"""
 
 from __future__ import absolute_import, unicode_literals
 
-from libs.kodi_monitor import UpdateMonitor
-from libs.kodi_service import logger
+import json
 
-MONITOR = UpdateMonitor()
-logger.info('Service started')
-MONITOR.waitForAbort()
-logger.info('Service stopped')
+import xbmc
+
+from .kodi_service import logger
+from .scrobbling_service import update_single_episode
+
+
+class UpdateMonitor(xbmc.Monitor):  # pylint: disable=missing-docstring
+
+    def onNotification(self, sender, method, data):
+        """
+        Example arguments::
+            sender: xbmc
+            method: VideoLibrary.OnUpdate
+            data: {"item":{"id":10,"type":"episode"},"playcount":1}
+        """
+        if method == 'VideoLibrary.OnUpdate' and 'playcount' in data:
+            item = json.loads(data)['item']
+            if item.get('type') == 'episode':
+                logger.debug('Updating episode details: {}'.format(data))
+                update_single_episode(item['id'])

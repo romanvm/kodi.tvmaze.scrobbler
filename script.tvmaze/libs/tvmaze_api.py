@@ -133,4 +133,4 @@ def send_episodes(episodes, show_id, provider):
         raise UpdateError(
             'status: {}, message: {}'.format(exc.response.status_code, exc.response.text))
     if response.status_code == 207:
-        logger.warning('Unable to update some episode info: {}'.format(response.text))
+        logger.warning('Failed to update some episode info: {}'.format(response.text))

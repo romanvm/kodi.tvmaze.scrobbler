@@ -26,7 +26,7 @@ from kodi_six import xbmc
 from .kodi_service import logger
 
 try:
-    from typing import Text, Optional, List, Dict, Any  # pylint: disable=unused-import
+    from typing import Text, Optional, List, Dict, Any, Union  # pylint: disable=unused-import
 except ImportError:
     pass
 
@@ -117,13 +117,29 @@ def get_recent_episodes():
     return result['episodes']
 
 
+def get_tvshow_details(tvshow_id):
+    # type: (int) -> Dict[Text, Any]
+    """
+    Get TV show details from Kodi database
+
+    :param tvshow_id: show ID in Koid database
+    :return: show details
+    """
+    method = 'VideoLibrary.GetTVShowDetails'
+    params = {
+        'tvshowid': int(tvshow_id),
+        'properties': ['uniqueid']
+    }
+    return send_json_rpc(method, params)['tvshowdetails']
+
+
 def get_episode_details(episode_id):
     # type: (int) -> Dict[Text, Any]
     """
     Get episode details
 
     :param episode_id: movie or episode Kodi database ID
-    :return: item details
+    :return: episode details
     """
     method = 'VideoLibrary.GetEpisodeDetails'
     params = {

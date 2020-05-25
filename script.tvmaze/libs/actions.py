@@ -24,17 +24,15 @@ import uuid
 from pprint import pformat
 
 import pyqrcode
-from kodi_six import xbmc, xbmcgui
+from kodi_six import xbmc
 
-from .gui import ConfirmationDialog, background_progress_dialog
+from .gui import DIALOG, ConfirmationDialog, background_progress_dialog
 from .kodi_service import ADDON, ADDON_ID, PROFILE_DIR, ICON, GETTEXT, logger
 from .medialibrary_api import NoDataError, get_tvshows, get_episodes
 from .scrobbling_service import get_unique_id, prepare_episode_list
 from .tvmaze_api import AuthorizationError, UpdateError, start_authorization, send_episodes
 
 _ = GETTEXT
-
-DIALOG = xbmcgui.Dialog()
 
 
 def authorize_addon():
@@ -111,7 +109,7 @@ def send_all_episodes_to_tvmaze():
             try:
                 show_id, provider = get_unique_id(show['uniqueid'])
             except LookupError:
-                logger.warning(
+                logger.error(
                     'Unable to determine unique id from show info: {}'.format(pformat(show)))
                 continue
             try:
@@ -131,6 +129,6 @@ def send_all_episodes_to_tvmaze():
                     'Unable to update episodes for show "{}": {}'.format(show['label'], exc))
                 continue
     if errors:
-        DIALOG.notification(ADDON_ID, _('Update finished with errors'), icon='error')
+        DIALOG.notification(ADDON_ID, _('Update completed with errors'), icon='error')
     else:
-        DIALOG.notification(ADDON_ID, _('Update finished'), icon=ICON, sound=False)
+        DIALOG.notification(ADDON_ID, _('Update completed'), icon=ICON, time=3000, sound=False)

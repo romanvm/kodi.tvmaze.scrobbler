@@ -68,9 +68,17 @@ msgid "Update all shows"
 msgstr ""
 
 msgctxt "#32015"
-msgid "Update finished"
+msgid "Update completed"
 msgstr ""
 
 msgctxt "#32016"
-msgid "Update finished with errors"
+msgid "Update completed with errors"
+msgstr ""
+
+msgctxt "#32017"
+msgid "Failed to update episode status"
+msgstr ""
+
+msgctxt "#32018"
+msgid "Episode status updated"
 msgstr ""
