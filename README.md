@@ -1,5 +1,7 @@
 # TVmaze Tracker/Scrobbler for Kodi Mediacenter
 
+Automatically track all TV episodes you are watching to TVmaze. A must have if you want to sync your watch history between various applications. Sign up for a free account at https://tvmaze.com for more features:
+
 This Kodi TV episode Tracker uses the TVmaze.com user API's scrobbler endpoints(https://static.tvmaze.com/apidoc/)
 
 What this addon does:
