@@ -122,6 +122,8 @@ def authorize_addon():
         if confirmation_dialog.is_confirmed:
             ADDON.setSettingString('username', confirmation_dialog.username)
             ADDON.setSettingString('apikey', confirmation_dialog.apikey)
+            DIALOG.notification(ADDON_ID, _('Addon has been authorized successfully'),
+                                icon=ICON, sound=False, time=3000)
         elif confirmation_dialog.error_message is not None:
             logger.error('Confirmation error: {}'.format(confirmation_dialog.error_message))
             message = _('Confirmation error: {}').format(confirmation_dialog.error_message)

@@ -82,3 +82,7 @@ msgstr ""
 msgctxt "#32018"
 msgid "Episode status updated"
 msgstr ""
+
+msgctxt "#32019"
+msgid "Addon has been authorized successfully"
+msgstr ""
