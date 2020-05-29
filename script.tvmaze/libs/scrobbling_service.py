@@ -98,7 +98,8 @@ def authorize_addon():
         )
         if not answer:
             return
-    keyboard = xbmc.Keyboard(heading=_('Your TVmaze account email'))
+    keyboard = xbmc.Keyboard()
+    keyboard.setHeading(_('Your TVmaze account email'))
     keyboard.doModal()
     if keyboard.isConfirmed():
         email = keyboard.getText()
