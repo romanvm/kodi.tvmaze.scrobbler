@@ -150,7 +150,7 @@ def authorize_addon():
         del confirmation_dialog
 
 
-def send_all_episodes_to_tvmaze():
+def update_all_episodes():
     # type: () -> None
     """
     Fetch the list of all episodes from medialibrary and send watched statuses to TVmaze
@@ -266,7 +266,7 @@ def update_recent_episodes():
         DIALOG.notification(ADDON_ID, _('Update completed'), icon=ICON, time=3000, sound=False)
 
 
-def get_actions():
+def get_menu_actions():
     # type: () -> List[Tuple[Text, Callable[[], None]]]
     """
     Get main menu actions
@@ -276,7 +276,7 @@ def get_actions():
     actions = [(_('Authorize the addon'), authorize_addon)]
     if is_authorized():
         actions = [
-            (_('Update all shows'), send_all_episodes_to_tvmaze),
+            (_('Update all shows'), update_all_episodes),
             (_('Update recent episodes'), update_recent_episodes),
         ] + actions
     return actions
