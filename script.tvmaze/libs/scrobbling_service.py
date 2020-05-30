@@ -37,7 +37,7 @@ from .tvmaze_api import (AuthorizationError, UpdateError, start_authorization, s
                          is_authorized)
 
 try:
-    from typing import Text, Dict, Any, List, Tuple  # pylint: disable=unused-import
+    from typing import Text, Dict, Any, List, Tuple, Callable  # pylint: disable=unused-import
 except ImportError:
     pass
 
@@ -264,3 +264,15 @@ def update_recent_episodes():
         DIALOG.notification(ADDON_ID, _('Update completed with errors'), icon='error')
     else:
         DIALOG.notification(ADDON_ID, _('Update completed'), icon=ICON, time=3000, sound=False)
+
+
+def get_actions():
+    # type: () -> List[Tuple[Text, Callable[[], None]]]
+    """Get main menu actions"""
+    actions = [(_('Authorize the addon'), authorize_addon)]
+    if is_authorized():
+        actions = [
+            (_('Update all shows'), send_all_episodes_to_tvmaze),
+            (_('Update recent episodes'), update_recent_episodes),
+        ] + actions
+    return actions
