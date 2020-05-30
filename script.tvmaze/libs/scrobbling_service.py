@@ -89,10 +89,11 @@ def _prepare_episode_list(kodi_episode_list):
 def _send_show_episodes_to_tvmaze(unique_id, episodes):
     # type: (UniqueId, List[Dict[Text, int]]) -> None
     """
+    Send episodes statuses of a TV show to TVmaze
 
-    :param unique_id:
-    :param episodes:
-    :raises UpdateError:
+    :param unique_id: UniqueId tuple of show_id and provider
+    :param episodes: the list of episodes
+    :raises UpdateError: on update error
     """
     episodes_for_tvmaze = _prepare_episode_list(episodes)
     send_episodes(episodes_for_tvmaze, unique_id.show_id, unique_id.provider)
