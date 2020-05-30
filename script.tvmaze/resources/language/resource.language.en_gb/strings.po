@@ -86,3 +86,7 @@ msgstr ""
 msgctxt "#32019"
 msgid "Addon has been authorized successfully"
 msgstr ""
+
+msgctxt "#32020"
+msgid "Update recent episodes"
+msgstr ""

@@ -22,16 +22,19 @@ import os
 import re
 import time
 import uuid
+from collections import defaultdict, namedtuple
 from pprint import pformat
 
 import pyqrcode
+import six
 from kodi_six import xbmc
 
 from .gui import DIALOG, ConfirmationDialog, background_progress_dialog
 from .kodi_service import ADDON, ADDON_ID, PROFILE_DIR, ICON, GETTEXT, logger
 from .medialibrary_api import (NoDataError, get_tvshows, get_episodes, get_tvshow_details,
-                               get_episode_details)
-from .tvmaze_api import AuthorizationError, UpdateError, start_authorization, send_episodes
+                               get_episode_details, get_recent_episodes)
+from .tvmaze_api import (AuthorizationError, UpdateError, start_authorization, send_episodes,
+                         is_authorized)
 
 try:
     from typing import Text, Dict, Any, List, Tuple  # pylint: disable=unused-import
@@ -42,6 +45,8 @@ _ = GETTEXT
 
 SUPPORTED_IDS = ('tvmaze', 'tvdb', 'imdb')
 
+UniqueId = namedtuple('UniqueId', ['show_id', 'provider'])  # pylint: disable=invalid-name
+
 
 class StatusType(object):  # pylint: disable=too-few-public-methods
     WATCHED = 0
@@ -50,7 +55,7 @@ class StatusType(object):  # pylint: disable=too-few-public-methods
 
 
 def _get_unique_id(unique_ids):
-    # type: (Dict[Text, Text]) -> Tuple[Text, Text]
+    # type: (Dict[Text, Text]) -> UniqueId
     """
     Get a show ID in one of the supported online databases
 
@@ -59,11 +64,11 @@ def _get_unique_id(unique_ids):
     :raises LookupError: if a unique ID cannot be determined
     """
     for provider in SUPPORTED_IDS:
-        unique_id = unique_ids.get(provider)
-        if unique_id is not None:
+        show_id = unique_ids.get(provider)
+        if show_id is not None:
             if provider == 'tvdb':
                 provider = 'thetvdb'
-            return unique_id, provider
+            return UniqueId(show_id, provider)
     raise LookupError
 
 
@@ -79,6 +84,18 @@ def _prepare_episode_list(kodi_episode_list):
                 'type': StatusType.WATCHED if episode['playcount'] else StatusType.ACQUIRED,
             })
     return episodes_for_tvmaze
+
+
+def _send_show_episodes_to_tvmaze(unique_id, episodes):
+    # type: (UniqueId, List[Dict[Text, int]]) -> None
+    """
+
+    :param unique_id:
+    :param episodes:
+    :raises UpdateError:
+    """
+    episodes_for_tvmaze = _prepare_episode_list(episodes)
+    send_episodes(episodes_for_tvmaze, unique_id.show_id, unique_id.provider)
 
 
 def authorize_addon():
@@ -137,6 +154,9 @@ def send_all_episodes_to_tvmaze():
     """
     Fetch the list of all episodes from medialibrary and send watched statuses to TVmaze
     """
+    if not is_authorized():
+        logger.warning('Addon is not authorized')
+        return
     logger.info('Syncing all episodes info to TVmaze...')
     errors = False
     with background_progress_dialog(_('TVmaze Scrobbler'), _('Updating episodes')) as dialog:
@@ -156,7 +176,7 @@ def send_all_episodes_to_tvmaze():
             )
             dialog.update(percent, _('TVmaze Scrobbler'), message)
             try:
-                show_id, provider = _get_unique_id(show['uniqueid'])
+                unique_id = _get_unique_id(show['uniqueid'])
             except LookupError:
                 logger.error(
                     'Unable to determine unique id from show info: {}'.format(pformat(show)))
@@ -167,11 +187,8 @@ def send_all_episodes_to_tvmaze():
                 logger.warning('TV show "{}" has no episodes'.format(show['label']))
                 continue
             logger.debug('"{}" episodes from Kodi:\n{}'.format(show['label'], pformat(episodes)))
-            episodes_for_tvmaze = _prepare_episode_list(episodes)
-            logger.debug(
-                '"{}" episodes for TVmaze:\n{}'.format(show['label'], pformat(episodes_for_tvmaze)))
             try:
-                send_episodes(episodes_for_tvmaze, show_id, provider)
+                _send_show_episodes_to_tvmaze(unique_id, episodes)
             except UpdateError as exc:
                 errors = True
                 logger.error(
@@ -186,20 +203,63 @@ def send_all_episodes_to_tvmaze():
 def update_single_episode(episode_id):
     # type: (int) -> None
     """Update watched status for a single episode"""
+    if not is_authorized():
+        return
     episode_details = get_episode_details(episode_id)
     tvshow_details = get_tvshow_details(episode_details['tvshowid'])
     try:
-        unique_id, provider = _get_unique_id(tvshow_details['uniqueid'])
+        unique_id = _get_unique_id(tvshow_details['uniqueid'])
     except LookupError:
         logger.error(
             'Unable to determine unique id from show info: {}'.format(pformat(tvshow_details)))
         return
     episodes_for_tvmaze = _prepare_episode_list([episode_details])
     try:
-        send_episodes(episodes_for_tvmaze, unique_id, provider)
+        send_episodes(episodes_for_tvmaze, unique_id.show_id, unique_id.provider)
     except UpdateError as exc:
         logger.error('Failed to update episode status:\n{}Error: {}'.format(episode_details, exc))
         DIALOG.notification(ADDON_ID, _('Failed to update episode status'), icon='error')
     else:
         DIALOG.notification(
             ADDON_ID, _('Episode status updated'), icon=ICON, time=3000, sound=False)
+
+
+def update_recent_episodes():
+    # type: () -> None
+    """Add recent episodes to TVmaze"""
+    if not is_authorized():
+        return
+    errors = False
+    try:
+        recent_episodes = get_recent_episodes()
+    except NoDataError:
+        return
+    logger.debug('Recent episodes from Kodi:\n{}'.format(pformat(recent_episodes)))
+    id_mapping = {}
+    episode_mapping = defaultdict(list)
+    for episode in recent_episodes:
+        if episode['tvshowid'] not in id_mapping:
+            show_details = get_tvshow_details(episode['tvshowid'])
+            try:
+                unique_id = _get_unique_id(show_details['uniqueid'])
+            except LookupError:
+                logger.error(
+                    'Unable to determine unique id from show info: {}'.format(
+                        pformat(show_details)))
+                continue
+            id_mapping[episode['tvshowid']] = unique_id
+            episode_mapping[unique_id].append(episode)
+        else:
+            episode_mapping[id_mapping[episode['tvshowid']]].append(episode)
+    for unique_id, episodes in six.iteritems(episode_mapping):
+        try:
+            _send_show_episodes_to_tvmaze(unique_id, episodes)
+        except UpdateError as exc:
+            errors = True
+            logger.error(
+                'Unable to update episodes for show {}: {}'.format(unique_id, exc))
+            continue
+    if errors:
+        DIALOG.notification(ADDON_ID, _('Update completed with errors'), icon='error')
+    else:
+        DIALOG.notification(ADDON_ID, _('Update completed'), icon=ICON, time=3000, sound=False)

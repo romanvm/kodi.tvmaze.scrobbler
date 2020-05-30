@@ -23,7 +23,7 @@ import json
 import xbmc
 
 from .kodi_service import logger
-from .scrobbling_service import update_single_episode
+from .scrobbling_service import update_single_episode, update_recent_episodes
 
 
 class UpdateMonitor(xbmc.Monitor):  # pylint: disable=missing-docstring
@@ -40,3 +40,8 @@ class UpdateMonitor(xbmc.Monitor):  # pylint: disable=missing-docstring
             if item.get('type') == 'episode':
                 logger.debug('Updating episode details: {}'.format(data))
                 update_single_episode(item['id'])
+
+    def onScanFinished(self, library):
+        if library == 'video':
+            update_recent_episodes()
+            logger.debug('Recent episodes updated')

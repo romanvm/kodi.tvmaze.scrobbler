@@ -57,6 +57,11 @@ def _get_credentials():
     return username, apikey
 
 
+def is_authorized():
+    # type: () -> bool
+    return all(_get_credentials())
+
+
 def call_api(url, method='get', **requests_kwargs):
     # type: (Text, Text, **Optional[Union[tuple, dict, list]]) -> requests.Response
     """Call TVmaze API"""
