@@ -268,7 +268,11 @@ def update_recent_episodes():
 
 def get_actions():
     # type: () -> List[Tuple[Text, Callable[[], None]]]
-    """Get main menu actions"""
+    """
+    Get main menu actions
+
+    :return: the list of tuples (menu_label, action_callable)
+    """
     actions = [(_('Authorize the addon'), authorize_addon)]
     if is_authorized():
         actions = [
