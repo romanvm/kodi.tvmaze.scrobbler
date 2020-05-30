@@ -25,10 +25,16 @@ import xbmc
 from .kodi_service import logger
 from .scrobbling_service import update_single_episode, update_recent_episodes
 
+try:
+    from typing import Text  # pylint: disable=unused-import
+except ImportError:
+    pass
+
 
 class UpdateMonitor(xbmc.Monitor):  # pylint: disable=missing-docstring
 
     def onNotification(self, sender, method, data):
+        # type: (Text, Text, Text) -> None
         """
         Example arguments::
             sender: xbmc
@@ -42,6 +48,7 @@ class UpdateMonitor(xbmc.Monitor):  # pylint: disable=missing-docstring
                 update_single_episode(item['id'])
 
     def onScanFinished(self, library):
+        # type: (Text) -> None
         if library == 'video':
             update_recent_episodes()
             logger.debug('Recent episodes updated')
