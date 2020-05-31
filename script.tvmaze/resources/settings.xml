@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <settings>
-    <setting label="Username" type="text" id="username" default="" visible="false"/>
-    <setting label="API Key" type="text" id="apikey" default="" visible="false"/>
+    <setting label="" type="text" id="username" default="" visible="false"/>
+    <setting label="" type="text" id="apikey" default="" visible="false"/>
 </settings>

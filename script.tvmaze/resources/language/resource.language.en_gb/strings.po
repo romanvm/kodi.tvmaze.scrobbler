@@ -90,3 +90,7 @@ msgstr ""
 msgctxt "#32020"
 msgid "Update recent episodes"
 msgstr ""
+
+msgctxt "#32021"
+msgid "Pull episode statuses from TVmaze"
+msgstr ""
