@@ -165,7 +165,7 @@ def _get_tvmaze_id(kodi_show_info):
     return tvmaze_id
 
 
-def update_all_episodes():
+def push_all_episodes():
     # type: () -> None
     """
     Fetch the list of all episodes from medialibrary and send watched statuses to TVmaze
@@ -215,7 +215,7 @@ def update_all_episodes():
         DIALOG.notification(ADDON_ID, _('Update completed'), icon=ICON, time=3000, sound=False)
 
 
-def update_single_episode(episode_id):
+def push_single_episode(episode_id):
     # type: (int) -> None
     """Update watched status for a single episode"""
     if not is_authorized():
@@ -238,7 +238,7 @@ def update_single_episode(episode_id):
             ADDON_ID, _('Episode status updated'), icon=ICON, time=3000, sound=False)
 
 
-def update_recent_episodes():
+def push_recent_episodes():
     # type: () -> None
     """Add recent episodes to TVmaze"""
     if not is_authorized():
@@ -288,7 +288,7 @@ def get_menu_actions():
     actions = [(_('Authorize the addon'), authorize_addon)]
     if is_authorized():
         actions = [
-            (_('Update all shows'), update_all_episodes),
-            (_('Update recent episodes'), update_recent_episodes),
+            (_('Update all shows'), push_all_episodes),
+            (_('Update recent episodes'), push_recent_episodes),
         ] + actions
     return actions
