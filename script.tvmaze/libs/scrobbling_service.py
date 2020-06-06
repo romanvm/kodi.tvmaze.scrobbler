@@ -50,6 +50,7 @@ UniqueId = namedtuple('UniqueId', ['show_id', 'provider'])  # pylint: disable=in
 
 
 class StatusType(object):  # pylint: disable=too-few-public-methods
+    """Episode statuses on TVmaze"""
     WATCHED = 0
     ACQUIRED = 1
     SKIPPED = 2
