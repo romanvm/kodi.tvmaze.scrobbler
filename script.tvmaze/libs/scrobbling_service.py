@@ -55,6 +55,54 @@ class StatusType(object):  # pylint: disable=too-few-public-methods
     SKIPPED = 2
 
 
+def authorize_addon():
+    # type: () -> None
+    """
+    Authorize the addon on TVmaze
+
+    The function sends authorization request to TVmaze and saves TVmaze
+    username and API token for scrobbling requests authorization
+    """
+    if is_authorized():
+        answer = DIALOG.yesno(
+            _('TVmaze Scrobbler'),
+            _('The addon is already authorized.[CR]Authorize again?')
+        )
+        if not answer:
+            return
+    keyboard = xbmc.Keyboard()
+    keyboard.setHeading(_('Your TVmaze account email'))
+    keyboard.doModal()
+    if keyboard.isConfirmed():
+        email = keyboard.getText()
+        if re.search(r'^[\w.\-+]+@[\w.-]+\.[\w]+$', email) is None:
+            logger.error('Invalid email: {}'.format(email))
+            DIALOG.notification(ADDON_ID, _('Invalid email'), icon='error', time=3000)
+            return
+        try:
+            token, confirm_url = start_authorization(email)
+        except AuthorizationError as exc:
+            logger.error('TVmaze authorization error: {}'.format(exc))
+            message = _('Authorization error: {}').format(exc)
+            DIALOG.notification(ADDON_ID, message, icon='error')
+            return
+        qrcode_filename = uuid.uuid4().hex + '.png'
+        qrcode_path = os.path.join(PROFILE_DIR, qrcode_filename)
+        qrcode_image = pyqrcode.create(confirm_url)
+        qrcode_image.png(qrcode_path, scale=10)
+        confirmation_dialog = ConfirmationDialog(email, token, confirm_url, qrcode_path)
+        confirmation_dialog.doModal()
+        if confirmation_dialog.is_confirmed:
+            ADDON.setSettingString('username', confirmation_dialog.username)
+            ADDON.setSettingString('apikey', confirmation_dialog.apikey)
+            DIALOG.notification(ADDON_ID, _('Addon has been authorized successfully'),
+                                icon=ICON, sound=False, time=3000)
+        elif confirmation_dialog.error_message is not None:
+            logger.error('Confirmation error: {}'.format(confirmation_dialog.error_message))
+            message = _('Confirmation error: {}').format(confirmation_dialog.error_message)
+            DIALOG.notification(ADDON_ID, message, icon='error')
+        del confirmation_dialog
+
 def _get_unique_id(uniqueid_dict):
     # type: (Dict[Text, Text]) -> Optional[UniqueId]
     """
@@ -114,55 +162,6 @@ def _get_tvmaze_id(kodi_show_info):
     tvmaze_id = show_info['id']
     set_show_uniqueid(kodi_show_info['tvshowid'], tvmaze_id)
     return tvmaze_id
-
-
-def authorize_addon():
-    # type: () -> None
-    """
-    Authorize the addon on TVmaze
-
-    The function sends authorization request to TVmaze and saves TVmaze
-    username and API token for scrobbling requests authorization
-    """
-    if is_authorized():
-        answer = DIALOG.yesno(
-            _('TVmaze Scrobbler'),
-            _('The addon is already authorized.[CR]Authorize again?')
-        )
-        if not answer:
-            return
-    keyboard = xbmc.Keyboard()
-    keyboard.setHeading(_('Your TVmaze account email'))
-    keyboard.doModal()
-    if keyboard.isConfirmed():
-        email = keyboard.getText()
-        if re.search(r'^[\w.\-+]+@[\w.-]+\.[\w]+$', email) is None:
-            logger.error('Invalid email: {}'.format(email))
-            DIALOG.notification(ADDON_ID, _('Invalid email'), icon='error', time=3000)
-            return
-        try:
-            token, confirm_url = start_authorization(email)
-        except AuthorizationError as exc:
-            logger.error('TVmaze authorization error: {}'.format(exc))
-            message = _('Authorization error: {}').format(exc)
-            DIALOG.notification(ADDON_ID, message, icon='error')
-            return
-        qrcode_filename = uuid.uuid4().hex + '.png'
-        qrcode_path = os.path.join(PROFILE_DIR, qrcode_filename)
-        qrcode_image = pyqrcode.create(confirm_url)
-        qrcode_image.png(qrcode_path, scale=10)
-        confirmation_dialog = ConfirmationDialog(email, token, confirm_url, qrcode_path)
-        confirmation_dialog.doModal()
-        if confirmation_dialog.is_confirmed:
-            ADDON.setSettingString('username', confirmation_dialog.username)
-            ADDON.setSettingString('apikey', confirmation_dialog.apikey)
-            DIALOG.notification(ADDON_ID, _('Addon has been authorized successfully'),
-                                icon=ICON, sound=False, time=3000)
-        elif confirmation_dialog.error_message is not None:
-            logger.error('Confirmation error: {}'.format(confirmation_dialog.error_message))
-            message = _('Confirmation error: {}').format(confirmation_dialog.error_message)
-            DIALOG.notification(ADDON_ID, message, icon='error')
-        del confirmation_dialog
 
 
 def update_all_episodes():
