@@ -32,12 +32,13 @@ from kodi_six import xbmc
 from .gui import DIALOG, ConfirmationDialog, background_progress_dialog
 from .kodi_service import ADDON, ADDON_ID, PROFILE_DIR, ICON, GETTEXT, logger
 from .medialibrary_api import (NoDataError, get_tvshows, get_episodes, get_tvshow_details,
-                               get_episode_details, get_recent_episodes)
-from .tvmaze_api import (AuthorizationError, UpdateError, start_authorization, send_episodes,
-                         is_authorized)
+                               get_episode_details, get_recent_episodes, set_show_uniqueid)
+from .tvmaze_api import (AuthorizationError, UpdateError, GetInfoError, start_authorization,
+                         send_episodes, is_authorized, get_show_info_by_external_id)
 
 try:
-    from typing import Text, Dict, Any, List, Tuple, Callable  # pylint: disable=unused-import
+    # pylint: disable=unused-import
+    from typing import Text, Dict, Any, List, Tuple, Callable, Optional, Union
 except ImportError:
     pass
 
@@ -54,22 +55,21 @@ class StatusType(object):  # pylint: disable=too-few-public-methods
     SKIPPED = 2
 
 
-def _get_unique_id(unique_ids):
-    # type: (Dict[Text, Text]) -> UniqueId
+def _get_unique_id(uniqueid_dict):
+    # type: (Dict[Text, Text]) -> Optional[UniqueId]
     """
     Get a show ID in one of the supported online databases
 
-    :param unique_ids: uniqueid dict from Kodi JSON-RPC API
-    :return: a tuple of unique ID and online data provider
-    :raises LookupError: if a unique ID cannot be determined
+    :param uniqueid_dict: uniqueid dict from Kodi JSON-RPC API
+    :return: a named tuple of unique ID and online data provider
     """
     for provider in SUPPORTED_IDS:
-        show_id = unique_ids.get(provider)
+        show_id = uniqueid_dict.get(provider)
         if show_id is not None:
             if provider == 'tvdb':
                 provider = 'thetvdb'
             return UniqueId(show_id, provider)
-    raise LookupError
+    return None
 
 
 def _prepare_episode_list(kodi_episode_list):
@@ -86,17 +86,34 @@ def _prepare_episode_list(kodi_episode_list):
     return episodes_for_tvmaze
 
 
-def _send_show_episodes_to_tvmaze(unique_id, episodes):
-    # type: (UniqueId, List[Dict[Text, int]]) -> None
+def _send_show_episodes_to_tvmaze(tvmaze_id, episodes):
+    # type: (Union[int, Text], List[Dict[Text, int]]) -> None
     """
     Send episodes statuses of a TV show to TVmaze
 
-    :param unique_id: UniqueId tuple of show_id and provider
+    :param tvmaze_id: show ID on TVmaze
     :param episodes: the list of episodes
     :raises UpdateError: on update error
     """
     episodes_for_tvmaze = _prepare_episode_list(episodes)
-    send_episodes(episodes_for_tvmaze, unique_id.show_id, unique_id.provider)
+    send_episodes(episodes_for_tvmaze, tvmaze_id)
+
+
+def _get_tvmaze_id(kodi_show_info):
+    # type: (Dict[Text, Any]) -> Optional[int]
+    uniqueid_dict = kodi_show_info['uniqueid']
+    unique_id = _get_unique_id(uniqueid_dict)
+    if unique_id is None:
+        return None
+    if unique_id.provider == 'tvmaze':
+        return int(unique_id.show_id)
+    try:
+        show_info = get_show_info_by_external_id(unique_id.show_id, unique_id.provider)
+    except GetInfoError:
+        return None
+    tvmaze_id = show_info['id']
+    set_show_uniqueid(kodi_show_info['tvshowid'], tvmaze_id)
+    return tvmaze_id
 
 
 def authorize_addon():
@@ -107,9 +124,7 @@ def authorize_addon():
     The function sends authorization request to TVmaze and saves TVmaze
     username and API token for scrobbling requests authorization
     """
-    old_username = ADDON.getSettingString('username')
-    old_apikey = ADDON.getSettingString('apikey')
-    if old_username and old_apikey:
+    if is_authorized():
         answer = DIALOG.yesno(
             _('TVmaze Scrobbler'),
             _('The addon is already authorized.[CR]Authorize again?')
@@ -176,11 +191,10 @@ def update_all_episodes():
                 total=shows_count
             )
             dialog.update(percent, _('TVmaze Scrobbler'), message)
-            try:
-                unique_id = _get_unique_id(show['uniqueid'])
-            except LookupError:
+            tvmaze_id = _get_tvmaze_id(show)
+            if tvmaze_id is None:
                 logger.error(
-                    'Unable to determine unique id from show info: {}'.format(pformat(show)))
+                    'Unable to determine TVmaze id from show info: {}'.format(pformat(show)))
                 continue
             try:
                 episodes = get_episodes(show['tvshowid'])
@@ -189,7 +203,7 @@ def update_all_episodes():
                 continue
             logger.debug('"{}" episodes from Kodi:\n{}'.format(show['label'], pformat(episodes)))
             try:
-                _send_show_episodes_to_tvmaze(unique_id, episodes)
+                _send_show_episodes_to_tvmaze(tvmaze_id, episodes)
             except UpdateError as exc:
                 errors = True
                 logger.error(
@@ -206,19 +220,18 @@ def update_single_episode(episode_id):
     """Update watched status for a single episode"""
     if not is_authorized():
         return
-    episode_details = get_episode_details(episode_id)
-    tvshow_details = get_tvshow_details(episode_details['tvshowid'])
-    try:
-        unique_id = _get_unique_id(tvshow_details['uniqueid'])
-    except LookupError:
+    episode_info = get_episode_details(episode_id)
+    tvshow_info = get_tvshow_details(episode_info['tvshowid'])
+    tvmaze_id = _get_tvmaze_id(tvshow_info)
+    if tvmaze_id is None:
         logger.error(
-            'Unable to determine unique id from show info: {}'.format(pformat(tvshow_details)))
+            'Unable to determine TVmaze id from show info: {}'.format(pformat(tvshow_info)))
         return
-    episodes_for_tvmaze = _prepare_episode_list([episode_details])
+    episodes_for_tvmaze = _prepare_episode_list([episode_info])
     try:
-        send_episodes(episodes_for_tvmaze, unique_id.show_id, unique_id.provider)
+        send_episodes(episodes_for_tvmaze, tvmaze_id)
     except UpdateError as exc:
-        logger.error('Failed to update episode status:\n{}Error: {}'.format(episode_details, exc))
+        logger.error('Failed to update episode status:\n{}Error: {}'.format(episode_info, exc))
         DIALOG.notification(ADDON_ID, _('Failed to update episode status'), icon='error')
     else:
         DIALOG.notification(
@@ -240,25 +253,24 @@ def update_recent_episodes():
     episode_mapping = defaultdict(list)
     for episode in recent_episodes:
         if episode['tvshowid'] not in id_mapping:
-            show_details = get_tvshow_details(episode['tvshowid'])
-            try:
-                unique_id = _get_unique_id(show_details['uniqueid'])
-            except LookupError:
+            show_info = get_tvshow_details(episode['tvshowid'])
+            tvmaze_id = _get_tvmaze_id(show_info)
+            if tvmaze_id is None:
                 logger.error(
-                    'Unable to determine unique id from show info: {}'.format(
-                        pformat(show_details)))
+                    'Unable to determine TVmaze id from show info: {}'.format(
+                        pformat(show_info)))
                 continue
-            id_mapping[episode['tvshowid']] = unique_id
-            episode_mapping[unique_id].append(episode)
+            id_mapping[episode['tvshowid']] = tvmaze_id
+            episode_mapping[tvmaze_id].append(episode)
         else:
             episode_mapping[id_mapping[episode['tvshowid']]].append(episode)
-    for unique_id, episodes in six.iteritems(episode_mapping):
+    for tvmaze_id, episodes in six.iteritems(episode_mapping):
         try:
-            _send_show_episodes_to_tvmaze(unique_id, episodes)
+            _send_show_episodes_to_tvmaze(tvmaze_id, episodes)
         except UpdateError as exc:
             errors = True
             logger.error(
-                'Unable to update episodes for show {}: {}'.format(unique_id, exc))
+                'Unable to update episodes for show {}: {}'.format(tvmaze_id, exc))
             continue
     if errors:
         DIALOG.notification(ADDON_ID, _('Update completed with errors'), icon='error')

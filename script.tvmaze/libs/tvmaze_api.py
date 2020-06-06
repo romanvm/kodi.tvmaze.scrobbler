@@ -121,8 +121,8 @@ def poll_authorization(token):
     return response_data.get('username'), response_data.get('apikey')
 
 
-def send_episodes(episodes, show_id, provider):
-    # type: (List[Dict[Text, int]], Text, Text) -> None
+def send_episodes(episodes, show_id, provider='tvmaze'):
+    # type: (List[Dict[Text, int]], Union[int, Text], Text) -> None
     """
     Send statuses of episodes to TVmase
 
@@ -148,6 +148,14 @@ def send_episodes(episodes, show_id, provider):
 
 def get_show_info_by_external_id(show_id, provider):
     # type: (Text, Text) -> Dict[Text, Any]
+    """
+    Get brief show info from TVmaze by external ID
+
+    :param show_id: show ID in an external online DB
+    :param provider: online DB provider
+    :return: show info from TVmaze
+    :raises GetInfoError: if no show info was found
+    """
     url = API_URL + SHOW_LOOKUP_PATH
     params = {provider: show_id}
     try:
@@ -158,6 +166,13 @@ def get_show_info_by_external_id(show_id, provider):
 
 
 def get_episodes_from_watchlist(tvmaze_id):
+    """
+    Get episodes for a TV show from user's watchlist on TVmaze
+
+    :param tvmaze_id: show ID on TVmaze
+    :return: the list of episode infos from TVmaze
+    :raises GetInfoError:
+    """
     path = '{}/{}'.format(SCROBBLE_SHOWS_PATH, tvmaze_id)
     url = API_URL + path
     try:
