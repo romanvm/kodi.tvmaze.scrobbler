@@ -26,7 +26,7 @@ import requests
 from .kodi_service import logger, ADDON
 
 try:
-    from typing import Union, Text, List, Optional, Tuple, Dict  # pylint: disable=unused-import
+    from typing import Union, Text, List, Optional, Tuple, Dict, Any  # pylint: disable=unused-import
 except ImportError:
     pass
 
@@ -34,6 +34,7 @@ API_URL = 'http://api.tvmaze.com'
 AUTH_START_PATH = '/auth/start'
 AUTH_POLL_PATH = '/auth/poll'
 SCROBBLE_SHOWS_PATH = '/scrobble/shows'
+SHOW_LOOKUP_PATH = '/lookup/shows'
 
 SESSION = requests.Session()
 SESSION.headers.update({
@@ -47,6 +48,10 @@ class AuthorizationError(Exception):
 
 
 class UpdateError(Exception):
+    pass
+
+
+class GetInfoError(Exception):
     pass
 
 
@@ -139,3 +144,24 @@ def send_episodes(episodes, show_id, provider):
             'status: {}, message: {}'.format(exc.response.status_code, exc.response.text))
     if response.status_code == 207:
         logger.warning('Failed to update some episode info: {}'.format(response.text))
+
+
+def get_show_info_by_external_id(show_id, provider):
+    # type: (Text, Text) -> Dict[Text, Any]
+    url = API_URL + SHOW_LOOKUP_PATH
+    params = {provider: show_id}
+    try:
+        response = call_api(url, 'get', params=params)
+    except requests.exceptions.HTTPError:
+        raise GetInfoError('Unable to find a show by id {provider}={show_id}')
+    return response.json()
+
+
+def get_episodes_from_watchlist(tvmaze_id):
+    path = '{}/{}'.format(SCROBBLE_SHOWS_PATH, tvmaze_id)
+    url = API_URL + path
+    try:
+        response = call_api(url, 'get')
+    except requests.exceptions.HTTPError:
+        raise GetInfoError('Unable to get watchlist for show id {}'.format(tvmaze_id))
+    return response.json()

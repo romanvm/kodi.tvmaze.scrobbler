@@ -74,12 +74,13 @@ def get_tvshows():
     return result['tvshows']
 
 
-def get_episodes(tvshowid):
-    # type: (int) -> List[Dict[Text, Any]]
+def get_episodes(tvshowid, filter_=None):
+    # type: (int, Optional[Dict[Text, Any]]) -> List[Dict[Text, Any]]
     """
     Get the list of episodes from a specific TV show
 
     :param tvshowid: internal Kodi database ID for a TV show
+    :param filter_: filter for episodes
     :return: the list of episode data as Python dicts.
     :raises NoDataError: if a TV show has no episodes.
 
@@ -96,6 +97,8 @@ def get_episodes(tvshowid):
         'tvshowid': tvshowid,
         'properties': ['season', 'episode', 'playcount', 'tvshowid']
     }
+    if filter_ is not None:
+        params['filter'] = filter_
     result = send_json_rpc('VideoLibrary.GetEpisodes', params)
     if not result.get('episodes'):
         raise NoDataError('TV show {} has no episodes'.format(tvshowid))
@@ -162,3 +165,14 @@ def set_episode_playcount(episode_id, playcount=1):
         method = 'VideoLibrary.SetEpisodeDetails'
         params = {'episodeid': episode_id, 'playcount': playcount}
         send_json_rpc(method, params)
+
+
+def set_show_uniqueid(tvshow_id, external_id, provider='tvmaze'):
+    # type: (int, Union[Text, int], Text) -> None
+    """Set unique_id for a TV show"""
+    method = 'VideoLibrary.SetTVShowDetails'
+    params = {
+        'tvshowid': tvshow_id,
+        'uniqueid': {provider: str(external_id)},
+    }
+    send_json_rpc(method, params)
