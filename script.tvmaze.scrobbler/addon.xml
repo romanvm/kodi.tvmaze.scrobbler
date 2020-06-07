@@ -12,10 +12,10 @@
     <import addon="script.module.pyqrcode" />
     <import addon="script.module.web-pdb" />
   </requires>
-  <extension point="xbmc.service" library="service.py" />
   <extension point="xbmc.python.script" library="script.py">
     <provides>executable</provides>
   </extension>
+  <extension point="xbmc.service" library="service.py" />
   <extension point="xbmc.addon.metadata">
     <platform>all</platform>
     <summary lang="en_GB">TVmaze scrobbler.</summary>
