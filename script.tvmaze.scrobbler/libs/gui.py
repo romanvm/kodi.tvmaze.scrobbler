@@ -52,10 +52,7 @@ class ConfirmationLoop(threading.Thread):
 
     def run(self):
         self.stop_event.clear()
-        while not self.stop_event.is_set():
-            xbmc.sleep(10000)
-            if self._monitor.abortRequested():
-                break
+        while not (self.stop_event.is_set() or self._monitor.waitForAbort(10.0)):
             try:
                 result = poll_authorization(self._token)
             except AuthorizationError as exc:
