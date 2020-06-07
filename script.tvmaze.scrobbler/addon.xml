@@ -28,6 +28,6 @@
       <icon>resources/images/icon.png</icon>
       <fanart>resources/images/background.jpg</fanart>
     </assets>
-    <news>0.0.1: Initial release</news>
+    <news>- 0.0.1: Development version.</news>
   </extension>
 </addon>
