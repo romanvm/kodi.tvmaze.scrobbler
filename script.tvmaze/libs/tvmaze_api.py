@@ -165,18 +165,23 @@ def get_show_info_by_external_id(show_id, provider):
     return response.json()
 
 
-def get_episodes_from_watchlist(tvmaze_id):
+def get_episodes_from_watchlist(tvmaze_id, type_=None):
+    # type: (Union[int, Text], Optional[int]) -> List[Dict[Text, int]]
     """
     Get episodes for a TV show from user's watchlist on TVmaze
 
     :param tvmaze_id: show ID on TVmaze
+    :param type_: get only episodes with the given status type
     :return: the list of episode infos from TVmaze
     :raises GetInfoError:
     """
     path = '{}/{}'.format(SCROBBLE_SHOWS_PATH, tvmaze_id)
     url = API_URL + path
+    params = {'embed': 'episode'}
+    if type_ is not None:
+        params['type'] = type_
     try:
-        response = call_api(url, 'get')
+        response = call_api(url, 'get', params=params)
     except requests.exceptions.HTTPError:
         raise GetInfoError('Unable to get watchlist for show id {}'.format(tvmaze_id))
     return response.json()
