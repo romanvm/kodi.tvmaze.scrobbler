@@ -31,6 +31,7 @@ except ImportError:
     pass
 
 API_URL = 'http://api.tvmaze.com'
+USER_API_URL = 'https://api.tvmaze.com/v1'
 AUTH_START_PATH = '/auth/start'
 AUTH_POLL_PATH = '/auth/poll'
 SCROBBLE_SHOWS_PATH = '/scrobble/shows'
@@ -90,7 +91,7 @@ def start_authorization(email):
 
     :return: (authorization token, confirmation url) tuple
     """
-    url = API_URL + AUTH_START_PATH
+    url = USER_API_URL + AUTH_START_PATH
     data = {
         'email': email,
         'email_confirmation': True,
@@ -110,7 +111,7 @@ def poll_authorization(token):
 
     :return: (TVmaze username, API key) tuple
     """
-    url = API_URL + AUTH_POLL_PATH
+    url = USER_API_URL + AUTH_POLL_PATH
     try:
         response = call_api(url, 'post', json={'token': token})
     except requests.exceptions.HTTPError as exc:
@@ -135,7 +136,7 @@ def send_episodes(episodes, show_id, provider='tvmaze'):
     if not (username and apikey):
         raise UpdateError('Missing TVmaze username and API key')
     provider += '_id'
-    url = API_URL + SCROBBLE_SHOWS_PATH
+    url = USER_API_URL + SCROBBLE_SHOWS_PATH
     params = {provider: show_id}
     try:
         response = call_api(url, 'post', params=params, json=episodes, auth=(username, apikey))
@@ -176,7 +177,7 @@ def get_episodes_from_watchlist(tvmaze_id, type_=None):
     :raises GetInfoError:
     """
     path = '{}/{}'.format(SCROBBLE_SHOWS_PATH, tvmaze_id)
-    url = API_URL + path
+    url = USER_API_URL + path
     params = {'embed': 'episode'}
     if type_ is not None:
         params['type'] = type_
