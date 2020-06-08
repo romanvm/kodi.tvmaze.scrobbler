@@ -190,7 +190,6 @@ def _pull_watched_episodes(kodi_tv_shows=None):
     kodi_tv_shows = kodi_tv_shows or _get_tv_shows_from_kodi()
     if not kodi_tv_shows:
         return
-    logger.debug('TV shows from Kodi:\n{}'.format(pformat(kodi_tv_shows)))
     tvmaze_shows = {}
     for show in kodi_tv_shows:
         tvmaze_id = _get_tvmaze_id(show)
@@ -235,7 +234,6 @@ def _pull_watched_episodes(kodi_tv_shows=None):
                         raise NoDataError
                 except NoDataError:
                     continue
-                logger.debug('Episodes from Kodi:\n{}'.format(pformat(kodi_episodes)))
                 if kodi_episodes:
                     kodi_episode_info = kodi_episodes[0]
                     set_episode_playcount(kodi_episode_info['episodeid'])
@@ -266,7 +264,6 @@ def push_all_episodes():
         tv_shows = _get_tv_shows_from_kodi()
         if tv_shows is None:
             return
-        logger.debug('TV shows from Kodi:\n{}'.format(pformat(tv_shows)))
         _pull_watched_episodes(tv_shows)
         shows_count = len(tv_shows)
         for n, show in enumerate(tv_shows, 1):
@@ -287,7 +284,6 @@ def push_all_episodes():
             except NoDataError:
                 logger.warning('TV show "{}" has no episodes'.format(show['label']))
                 continue
-            logger.debug('"{}" episodes from Kodi:\n{}'.format(show['label'], pformat(episodes)))
             try:
                 _push_episodes_to_tvmaze(tvmaze_id, episodes)
             except UpdateError as exc:
@@ -306,6 +302,7 @@ def push_single_episode(episode_id):
     """Push watched status for a single episode"""
     if not is_authorized():
         return
+    logger.debug('Pushing single episode to TVmaze')
     episode_info = get_episode_details(episode_id)
     tvshow_info = get_tvshow_details(episode_info['tvshowid'])
     tvmaze_id = _get_tvmaze_id(tvshow_info)
@@ -329,13 +326,13 @@ def push_recent_episodes():
     """Push recent episodes to TVmaze"""
     if not is_authorized():
         return
+    logger.debug('Pushing recent episodes to TVmaze')
     errors = False
     _pull_watched_episodes()
     try:
         recent_episodes = get_recent_episodes()
     except NoDataError:
         return
-    logger.debug('Recent episodes from Kodi:\n{}'.format(pformat(recent_episodes)))
     id_mapping = {}
     episode_mapping = defaultdict(list)
     for episode in recent_episodes:
