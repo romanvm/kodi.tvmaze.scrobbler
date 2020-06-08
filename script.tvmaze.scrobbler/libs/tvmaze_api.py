@@ -167,7 +167,7 @@ def get_show_info_by_external_id(show_id, provider):
 
 
 def get_episodes_from_watchlist(tvmaze_id, type_=None):
-    # type: (Union[int, Text], Optional[int]) -> List[Dict[Text, int]]
+    # type: (Union[int, Text], Optional[int]) -> List[Dict[Text, Any]]
     """
     Get episodes for a TV show from user's watchlist on TVmaze
 
@@ -176,13 +176,16 @@ def get_episodes_from_watchlist(tvmaze_id, type_=None):
     :return: the list of episode infos from TVmaze
     :raises GetInfoError:
     """
+    username, apikey = _get_credentials()
+    if not (username and apikey):
+        raise UpdateError('Missing TVmaze username and API key')
     path = '{}/{}'.format(SCROBBLE_SHOWS_PATH, tvmaze_id)
     url = USER_API_URL + path
     params = {'embed': 'episode'}
     if type_ is not None:
         params['type'] = type_
     try:
-        response = call_api(url, 'get', params=params)
+        response = call_api(url, 'get', params=params, auth=(username, apikey))
     except requests.exceptions.HTTPError:
         raise GetInfoError('Unable to get watchlist for show id {}'.format(tvmaze_id))
     return response.json()

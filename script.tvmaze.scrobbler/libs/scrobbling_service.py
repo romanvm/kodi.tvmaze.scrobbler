@@ -191,7 +191,7 @@ def _pull_watched_episodes(kodi_tv_shows=None):
     if not kodi_tv_shows:
         return
     logger.debug('TV shows from Kodi:\n{}'.format(pformat(kodi_tv_shows)))
-    tvmaze_shows = defaultdict(list)
+    tvmaze_shows = {}
     for show in kodi_tv_shows:
         tvmaze_id = _get_tvmaze_id(show)
         if tvmaze_id is None:
@@ -203,13 +203,13 @@ def _pull_watched_episodes(kodi_tv_shows=None):
             logger.error(six.text_type(exc))
             continue
         logger.debug('Episodes from TVmaze for {}:\n{}'.format(tvmaze_id, pformat(tvmaze_episodes)))
-        tvmaze_shows[show['tvshowid']].append(tvmaze_episodes)
+        tvmaze_shows[show['tvshowid']] = tvmaze_episodes
     for tvshowid, episodes in six.iteritems(tvmaze_shows):
         for episode in episodes:
             tvmaze_episode_info = episode['_embedded']['episode']
             if (episode['type'] == StatusType.WATCHED
                     and 'season' in tvmaze_episode_info  # Todo: add support for specials
-                    and 'episode' in tvmaze_episode_info):
+                    and 'number' in tvmaze_episode_info):
                 filter_ = {
                     'and': [
                         {
@@ -220,7 +220,7 @@ def _pull_watched_episodes(kodi_tv_shows=None):
                         {
                             'field': 'episode',
                             'operator': 'is',
-                            'value': str(tvmaze_episode_info['episode']),
+                            'value': str(tvmaze_episode_info['number']),
                         },
                         {
                             'field': 'playcount',
