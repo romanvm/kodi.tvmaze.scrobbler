@@ -29,14 +29,10 @@ import pyqrcode
 import six
 from kodi_six import xbmc
 
+from . import medialibrary_api as medialib
+from . import tvmaze_api as tvmaze
 from .gui import DIALOG, ConfirmationDialog, background_progress_dialog
 from .kodi_service import ADDON, ADDON_ID, PROFILE_DIR, ICON, GETTEXT, logger
-from .medialibrary_api import (NoDataError, get_tvshows, get_episodes, get_tvshow_details,
-                               get_episode_details, get_recent_episodes, set_show_uniqueid,
-                               set_episode_playcount)
-from .tvmaze_api import (AuthorizationError, UpdateError, GetInfoError, start_authorization,
-                         send_episodes, is_authorized, get_show_info_by_external_id,
-                         get_episodes_from_watchlist)
 
 try:
     # pylint: disable=unused-import
@@ -66,7 +62,7 @@ def authorize_addon():
     The function sends authorization request to TVmaze and saves TVmaze
     username and API token for scrobbling requests authorization
     """
-    if is_authorized():
+    if tvmaze.is_authorized():
         answer = DIALOG.yesno(
             _('TVmaze Scrobbler'),
             _('The addon is already authorized.[CR]Authorize again?')
@@ -83,8 +79,8 @@ def authorize_addon():
             DIALOG.notification(ADDON_ID, _('Invalid email'), icon='error', time=3000)
             return
         try:
-            token, confirm_url = start_authorization(email)
-        except AuthorizationError as exc:
+            token, confirm_url = tvmaze.start_authorization(email)
+        except tvmaze.AuthorizationError as exc:
             logger.error('TVmaze authorization error: {}'.format(exc))
             message = _('Authorization error: {}').format(exc)
             DIALOG.notification(ADDON_ID, message, icon='error')
@@ -138,27 +134,25 @@ def _prepare_episode_list(kodi_episode_list):
 
 
 def _push_episodes_to_tvmaze(tvmaze_id, episodes):
-    # type: (Union[int, Text], List[Dict[Text, int]]) -> None
+    # type: (Union[int, Text], List[Dict[Text, int]]) -> bool
     """
     Push episodes statuses of a TV show to TVmaze
 
     :param tvmaze_id: show ID on TVmaze
     :param episodes: the list of episodes
-    :raises UpdateError: on update error
+    :return: success status
     """
     episodes_for_tvmaze = _prepare_episode_list(episodes)
-    send_episodes(episodes_for_tvmaze, tvmaze_id)
+    return tvmaze.push_episodes(episodes_for_tvmaze, tvmaze_id)
 
 
 def _load_and_store_tvmaze_id(show_id, provider, kodi_tvshowid):
     # type: (Text, Text, int) -> Optional[int]
-    try:
-        show_info = get_show_info_by_external_id(show_id, provider)
-    except GetInfoError as exc:
-        logger.error(six.text_type(exc))
+    show_info = tvmaze.get_show_info_by_external_id(show_id, provider)
+    if show_info is None:
         return None
     tvmaze_id = show_info['id']
-    set_show_uniqueid(kodi_tvshowid, tvmaze_id)
+    medialib.set_show_uniqueid(kodi_tvshowid, tvmaze_id)
     return tvmaze_id
 
 
@@ -177,8 +171,8 @@ def _get_tvmaze_id(kodi_show_info):
 def _get_tv_shows_from_kodi():
     # type: () -> Optional[List[Dict[Text, Any]]]
     try:
-        return get_tvshows()
-    except NoDataError:
+        return medialib.get_tvshows()
+    except medialib.NoDataError:
         logger.warning('Medialibrary has no TV shows')
         return None
 
@@ -196,10 +190,8 @@ def _pull_watched_episodes(kodi_tv_shows=None):
         if tvmaze_id is None:
             logger.error('Unable to determine TVmaze id from show info: {}'.format(pformat(show)))
             continue
-        try:
-            tvmaze_episodes = get_episodes_from_watchlist(tvmaze_id, type_=StatusType.WATCHED)
-        except GetInfoError as exc:
-            logger.error(six.text_type(exc))
+        tvmaze_episodes = tvmaze.get_episodes_from_watchlist(tvmaze_id, type_=StatusType.WATCHED)
+        if tvmaze_episodes is None:
             continue
         logger.debug('Episodes from TVmaze for {}:\n{}'.format(tvmaze_id, pformat(tvmaze_episodes)))
         tvmaze_shows[show['tvshowid']] = tvmaze_episodes
@@ -229,19 +221,19 @@ def _pull_watched_episodes(kodi_tv_shows=None):
                     ]
                 }
                 try:
-                    kodi_episodes = get_episodes(tvshowid, filter_=filter_)
+                    kodi_episodes = medialib.get_episodes(tvshowid, filter_=filter_)
                     if not kodi_episodes:
-                        raise NoDataError
-                except NoDataError:
+                        raise medialib.NoDataError
+                except medialib.NoDataError:
                     continue
                 if kodi_episodes:
                     kodi_episode_info = kodi_episodes[0]
-                    set_episode_playcount(kodi_episode_info['episodeid'])
+                    medialib.set_episode_playcount(kodi_episode_info['episodeid'])
 
 
 def pull_watched_episodes():
     # type: () -> None
-    if not is_authorized():
+    if not tvmaze.is_authorized():
         logger.warning('Addon is not authorized')
         return
     _pull_watched_episodes()
@@ -255,11 +247,11 @@ def push_all_episodes():
     """
     Fetch the list of all episodes from medialibrary and push them to TVmaze
     """
-    if not is_authorized():
+    if not tvmaze.is_authorized():
         logger.warning('Addon is not authorized')
         return
     logger.info('Pushing all episodes to TVmaze...')
-    errors = False
+    success = True
     with background_progress_dialog(_('TVmaze Scrobbler'), _('Pushing episodes')) as dialog:
         tv_shows = _get_tv_shows_from_kodi()
         if tv_shows is None:
@@ -280,64 +272,61 @@ def push_all_episodes():
                     'Unable to determine TVmaze id from show info: {}'.format(pformat(show)))
                 continue
             try:
-                episodes = get_episodes(show['tvshowid'])
-            except NoDataError:
+                episodes = medialib.get_episodes(show['tvshowid'])
+            except medialib.NoDataError:
                 logger.warning('TV show "{}" has no episodes'.format(show['label']))
                 continue
-            try:
-                _push_episodes_to_tvmaze(tvmaze_id, episodes)
-            except UpdateError as exc:
-                errors = True
+            success = _push_episodes_to_tvmaze(tvmaze_id, episodes)
+            if not success:
                 logger.error(
-                    'Unable to push episodes for show "{}": {}'.format(show['label'], exc))
+                    'Unable to push episodes for show "{}".'.format(show['label']))
                 continue
-    if errors:
-        DIALOG.notification(ADDON_ID, _('Push completed with errors'), icon='error')
-    else:
+    if success:
         DIALOG.notification(ADDON_ID, _('Push completed'), icon=ICON, time=3000, sound=False)
+    else:
+        DIALOG.notification(ADDON_ID, _('Push completed with errors'), icon='error')
 
 
 def push_single_episode(episode_id):
     # type: (int) -> None
     """Push watched status for a single episode"""
-    if not is_authorized():
+    if not tvmaze.is_authorized():
         return
     logger.debug('Pushing single episode to TVmaze')
-    episode_info = get_episode_details(episode_id)
-    tvshow_info = get_tvshow_details(episode_info['tvshowid'])
+    episode_info = medialib.get_episode_details(episode_id)
+    tvshow_info = medialib.get_tvshow_details(episode_info['tvshowid'])
     tvmaze_id = _get_tvmaze_id(tvshow_info)
     if tvmaze_id is None:
         logger.error(
             'Unable to determine TVmaze id from show info: {}'.format(pformat(tvshow_info)))
         return
     episodes_for_tvmaze = _prepare_episode_list([episode_info])
-    try:
-        send_episodes(episodes_for_tvmaze, tvmaze_id)
-    except UpdateError as exc:
-        logger.error('Failed to push episode status:\n{}Error: {}'.format(episode_info, exc))
-        DIALOG.notification(ADDON_ID, _('Failed to push episode status'), icon='error')
-    else:
+    success = tvmaze.push_episodes(episodes_for_tvmaze, tvmaze_id)
+    if success:
         DIALOG.notification(
             ADDON_ID, _('Pushed episode status'), icon=ICON, time=3000, sound=False)
+    else:
+        logger.error('Failed to push episode status.')
+        DIALOG.notification(ADDON_ID, _('Failed to push episode status'), icon='error')
 
 
 def push_recent_episodes():
     # type: () -> None
     """Push recent episodes to TVmaze"""
-    if not is_authorized():
+    if not tvmaze.is_authorized():
         return
     logger.debug('Pushing recent episodes to TVmaze')
-    errors = False
     _pull_watched_episodes()
     try:
-        recent_episodes = get_recent_episodes()
-    except NoDataError:
+        recent_episodes = medialib.get_recent_episodes()
+    except medialib.NoDataError:
         return
+    success = True
     id_mapping = {}
     episode_mapping = defaultdict(list)
     for episode in recent_episodes:
         if episode['tvshowid'] not in id_mapping:
-            show_info = get_tvshow_details(episode['tvshowid'])
+            show_info = medialib.get_tvshow_details(episode['tvshowid'])
             tvmaze_id = _get_tvmaze_id(show_info)
             if tvmaze_id is None:
                 logger.error(
@@ -349,17 +338,15 @@ def push_recent_episodes():
         else:
             episode_mapping[id_mapping[episode['tvshowid']]].append(episode)
     for tvmaze_id, episodes in six.iteritems(episode_mapping):
-        try:
-            _push_episodes_to_tvmaze(tvmaze_id, episodes)
-        except UpdateError as exc:
-            errors = True
+        success = _push_episodes_to_tvmaze(tvmaze_id, episodes)
+        if not success:
             logger.error(
-                'Unable to update episodes for show {}: {}'.format(tvmaze_id, exc))
+                'Unable to update episodes for show {}.'.format(tvmaze_id))
             continue
-    if errors:
-        DIALOG.notification(ADDON_ID, _('Push completed with errors'), icon='error')
-    else:
+    if success:
         DIALOG.notification(ADDON_ID, _('Push completed'), icon=ICON, time=3000, sound=False)
+    else:
+        DIALOG.notification(ADDON_ID, _('Push completed with errors'), icon='error')
 
 
 def get_menu_actions():
@@ -370,7 +357,7 @@ def get_menu_actions():
     :return: the list of tuples (menu_label, action_callable)
     """
     actions = [(_('Authorize the addon'), authorize_addon)]
-    if is_authorized():
+    if tvmaze.is_authorized():
         actions = [
             (_('Push all shows'), push_all_episodes),
             (_('Push recent episodes'), push_recent_episodes),
