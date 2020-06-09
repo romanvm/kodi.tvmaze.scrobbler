@@ -18,8 +18,7 @@
 
 from __future__ import absolute_import, unicode_literals
 
-from kodi_six import xbmcgui
-
+from libs.gui import DIALOG
 from libs.kodi_service import debug_exception, GETTEXT
 from libs.scrobbling_service import get_menu_actions
 
@@ -30,7 +29,7 @@ def main():
     """Main scrobbler menu"""
     actions = get_menu_actions()
     menu = [action[0] for action in actions]
-    result = xbmcgui.Dialog().select(_('TVmaze Scrobbler Menu'), menu)
+    result = DIALOG.select(_('TVmaze Scrobbler Menu'), menu)
     if result >= 0:
         action = actions[result][1]
         action()
