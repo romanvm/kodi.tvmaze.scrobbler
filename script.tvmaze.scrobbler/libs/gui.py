@@ -92,7 +92,7 @@ class ConfirmationDialog(pyxbmct.AddonDialogWindow):
                 confirm_url=self._confirm_url,
                 email=self._email))
         qr_code = pyxbmct.Image(self._qrcode_path)
-        self.placeControl(qr_code, 2, 1, 4, 3, pad_x=0)
+        self.placeControl(qr_code, 2, 1, 4, 3, pad_x=-20)
         self._cancel_btn = pyxbmct.Button(_('Cancel'))
         self.placeControl(self._cancel_btn, 6, 2, pad_x=-5, pad_y=10)
         self.setFocus(self._cancel_btn)

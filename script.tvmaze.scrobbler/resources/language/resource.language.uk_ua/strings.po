@@ -37,7 +37,7 @@ msgstr "Меню скроблера TVmaze"
 
 msgctxt "#32005"
 msgid "The addon is already authorized.[CR]Authorize again?"
-msgstr "Надбудова вже авторизована.[CR]Авторизувати знову?"
+msgstr "Надбудову вже авторизовано.[CR]Авторизувати знову?"
 
 msgctxt "#32006"
 msgid "Your TVmaze account email"
