@@ -164,7 +164,7 @@ def start_authorization(email):
         'email_confirmation': True,
     }
     try:
-        response_data = _call_user_api(AUTH_POLL_PATH, 'post', authenticate=False, json=data)
+        response_data = _call_user_api(AUTH_START_PATH, 'post', authenticate=False, json=data)
     except ApiError as exc:
         raise AuthorizationError(six.text_type(exc))
     return response_data.get('token'), response_data.get('confirm_url')
