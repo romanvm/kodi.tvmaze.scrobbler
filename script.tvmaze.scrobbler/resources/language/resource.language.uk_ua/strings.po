@@ -114,3 +114,11 @@ msgstr "Показувати сповіщення про оновлення"
 msgctxt "#32024"
 msgid "Automatically pull watched episodes from TVmaze"
 msgstr "Автоматично отримувати переглянуті серії із TVmaze"
+
+msgctxt "#32025"
+msgid "Reset Authorization"
+msgstr "Скидання авторизації"
+
+msgctxt "#32026"
+msgid "Збережені дані автентифікації буде очищено.[CR]Ви впевнені?"
+msgstr ""

@@ -102,6 +102,16 @@ def authorize_addon():
             DIALOG.notification(ADDON_ID, message, icon='error')
         del confirmation_dialog
 
+
+def reset_authorization():
+    # type: () -> None
+    """Clear stored username and API key"""
+    if DIALOG.yesno(_('Reset Authorization'),
+                    _('This will clear stored authentication credentials.[CR]Are you sure?')):
+        ADDON.setSettingString('username', '')
+        ADDON.setSettingString('apikey', '')
+
+
 def _get_unique_id(uniqueid_dict):
     # type: (Dict[Text, Text]) -> Optional[UniqueId]
     """
@@ -378,5 +388,6 @@ def get_menu_actions():
             (_('Push all shows'), sync_all_episodes),
             (_('Push recent episodes'), sync_recent_episodes),
             (_('Pull watched episodes from TVmaze'), pull_watched_episodes),
+            (_('Reset Authorization'), reset_authorization),
         ] + actions
     return actions
