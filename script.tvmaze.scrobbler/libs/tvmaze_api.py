@@ -52,7 +52,7 @@ class ApiError(Exception):
     def __init__(self, status_code, reason):
         # type: (int, Text) -> None
         super(ApiError, self).__init__()
-        self.status_code = status_code,
+        self.status_code = status_code
         self.reason = reason
 
     def __str__(self):
