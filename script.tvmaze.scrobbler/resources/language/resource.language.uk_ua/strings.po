@@ -120,5 +120,5 @@ msgid "Reset Authorization"
 msgstr "Скидання авторизації"
 
 msgctxt "#32026"
-msgid "Збережені дані автентифікації буде очищено.[CR]Ви впевнені?"
-msgstr ""
+msgid "This will clear stored authentication credentials.[CR]Are you sure?"
+msgstr "Збережені дані автентифікації буде очищено.[CR]Ви впевнені?"

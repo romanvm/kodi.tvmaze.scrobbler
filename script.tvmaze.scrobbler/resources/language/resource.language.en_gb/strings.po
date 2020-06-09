@@ -112,5 +112,5 @@ msgid "Reset Authorization"
 msgstr ""
 
 msgctxt "#32026"
-msgid "This will clear stored authentication credentials.[CR]Are you sure?'"
+msgid "This will clear stored authentication credentials.[CR]Are you sure?"
 msgstr ""
