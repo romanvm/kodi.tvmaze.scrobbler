@@ -98,3 +98,11 @@ msgstr ""
 msgctxt "#32022"
 msgid "Pulled watched episodes from TVmaze"
 msgstr ""
+
+msgctxt "#32023"
+msgid "Show update notifications"
+msgstr ""
+
+msgctxt "#32024"
+msgid "Automatically pull watched episodes from TVmaze"
+msgstr ""

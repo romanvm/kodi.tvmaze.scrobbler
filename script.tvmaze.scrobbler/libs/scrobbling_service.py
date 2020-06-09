@@ -237,28 +237,20 @@ def pull_watched_episodes():
         logger.warning('Addon is not authorized')
         return
     _pull_watched_episodes()
-    DIALOG.notification(ADDON_ID,
-                        _('Pulled watched episodes from TVmaze'),
-                        icon=ICON, time=3000, sound=False)
+    if ADDON.getSettingBool('show_notifications'):
+        DIALOG.notification(ADDON_ID,
+                            _('Pulled watched episodes from TVmaze'),
+                            icon=ICON, time=3000, sound=False)
 
 
-def push_all_episodes():
-    # type: () -> None
-    """
-    Fetch the list of all episodes from medialibrary and push them to TVmaze
-    """
-    if not tvmaze.is_authorized():
-        logger.warning('Addon is not authorized')
-        return
+def _push_all_episodes(kodi_tv_shows):
+    # type: (List[Dict[Text, Any]]) -> None
+    """Push TV shows to TVmaze"""
     logger.info('Pushing all episodes to TVmaze...')
     success = True
     with background_progress_dialog(_('TVmaze Scrobbler'), _('Pushing episodes')) as dialog:
-        tv_shows = _get_tv_shows_from_kodi()
-        if tv_shows is None:
-            return
-        _pull_watched_episodes(tv_shows)
-        shows_count = len(tv_shows)
-        for n, show in enumerate(tv_shows, 1):
+        shows_count = len(kodi_tv_shows)
+        for n, show in enumerate(kodi_tv_shows, 1):
             percent = int(100 * n / shows_count)
             message = _(r'Pushing episodes for show \"{show_name}\": {count}/{total}').format(
                 show_name=show['label'],
@@ -281,16 +273,31 @@ def push_all_episodes():
                 logger.error(
                     'Unable to push episodes for show "{}".'.format(show['label']))
                 continue
-    if success:
+    if success and ADDON.getSettingBool('show_notifications'):
         DIALOG.notification(ADDON_ID, _('Push completed'), icon=ICON, time=3000, sound=False)
     else:
         DIALOG.notification(ADDON_ID, _('Push completed with errors'), icon='error')
+
+
+def sync_all_episodes():
+    # type: () -> None
+    """Pull watched episodes from TVmaze and then push all TV shows from Kodi to TVmaze"""
+    if not tvmaze.is_authorized():
+        logger.warning('Addon is not authorized')
+        return
+    tv_shows = _get_tv_shows_from_kodi()
+    if tv_shows is None:
+        return
+    if ADDON.getSettingBool('pull_from_tvmaze'):
+        _pull_watched_episodes(tv_shows)
+    _push_all_episodes(tv_shows)
 
 
 def push_single_episode(episode_id):
     # type: (int) -> None
     """Push watched status for a single episode"""
     if not tvmaze.is_authorized():
+        logger.warning('Addon is not authorized')
         return
     logger.debug('Pushing single episode to TVmaze')
     episode_info = medialib.get_episode_details(episode_id)
@@ -302,7 +309,7 @@ def push_single_episode(episode_id):
         return
     episodes_for_tvmaze = _prepare_episode_list([episode_info])
     success = tvmaze.push_episodes(episodes_for_tvmaze, tvmaze_id)
-    if success:
+    if success and ADDON.getSettingBool('show_notifications'):
         DIALOG.notification(
             ADDON_ID, _('Pushed episode status'), icon=ICON, time=3000, sound=False)
     else:
@@ -310,13 +317,12 @@ def push_single_episode(episode_id):
         DIALOG.notification(ADDON_ID, _('Failed to push episode status'), icon='error')
 
 
-def push_recent_episodes():
+def _push_recent_episodes():
     # type: () -> None
     """Push recent episodes to TVmaze"""
-    if not tvmaze.is_authorized():
-        return
     logger.debug('Pushing recent episodes to TVmaze')
-    _pull_watched_episodes()
+    if ADDON.getSettingBool('pull_from_tvmaze'):
+        _pull_watched_episodes()
     try:
         recent_episodes = medialib.get_recent_episodes()
     except medialib.NoDataError:
@@ -343,10 +349,20 @@ def push_recent_episodes():
             logger.error(
                 'Unable to update episodes for show {}.'.format(tvmaze_id))
             continue
-    if success:
+    if success and ADDON.getSettingBool('show_notifications'):
         DIALOG.notification(ADDON_ID, _('Push completed'), icon=ICON, time=3000, sound=False)
     else:
         DIALOG.notification(ADDON_ID, _('Push completed with errors'), icon='error')
+
+
+def sync_recent_episodes():
+    """Pull watched episodes from TVmaze and then push recent episodes to TVmaze"""
+    if not tvmaze.is_authorized():
+        logger.warning('Addon is not authorized')
+        return
+    if ADDON.getSettingBool('pull_from_tvmaze'):
+        _pull_watched_episodes()
+    _push_recent_episodes()
 
 
 def get_menu_actions():
@@ -359,8 +375,8 @@ def get_menu_actions():
     actions = [(_('Authorize the addon'), authorize_addon)]
     if tvmaze.is_authorized():
         actions = [
-            (_('Push all shows'), push_all_episodes),
-            (_('Push recent episodes'), push_recent_episodes),
+            (_('Push all shows'), sync_all_episodes),
+            (_('Push recent episodes'), sync_recent_episodes),
             (_('Pull watched episodes from TVmaze'), pull_watched_episodes),
         ] + actions
     return actions
