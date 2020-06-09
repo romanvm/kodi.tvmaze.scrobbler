@@ -56,7 +56,7 @@ class ApiError(Exception):
         self.reason = reason
 
     def __str__(self):
-        return '{} status: {}; reason: {}'.format(type(self), self.status_code, self.reason)
+        return '{}: {}; reason: {}'.format(self.__class__.__name__, self.status_code, self.reason)
 
 
 class AuthorizationError(Exception):
