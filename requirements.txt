@@ -4,3 +4,4 @@ Kodistubs
 git+https://github.com/romanvm/kodi.six.git
 git+https://github.com/romanvm/script.module.pyxbmct.git
 pyqrcode
+pylint
