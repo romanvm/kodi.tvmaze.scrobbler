@@ -216,7 +216,7 @@ def get_show_info_by_external_id(show_id, provider):
     """
     params = {provider: show_id}
     try:
-        return _call_api(SCROBBLE_SHOWS_PATH, 'get', params=params)
+        return _call_api(SHOW_LOOKUP_PATH, 'get', params=params)
     except ApiError:
         return None
 
