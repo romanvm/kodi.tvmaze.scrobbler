@@ -146,3 +146,4 @@ cython_debug/
 *.zip
 *.sqlite
 *.pickle
+.venv3/
