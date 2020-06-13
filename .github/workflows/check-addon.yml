@@ -1,10 +1,6 @@
 name: Check addon
 
-on:
-  push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
+on: [ push, pull_request ]
 
 jobs:
   build:
@@ -17,14 +13,17 @@ jobs:
       uses: actions/setup-python@v1
       with:
         python-version: 3.8
-    - name: Install addon checker
+    - name: Install Pylint
       run: |
-        pip install -q kodi-addon-checker
         pip install -q -r requirements.txt
-        pip install -q git+https://github.com/romanvm/Kodistubs.git@matrix
-    - name: Check with addon-checker
+    - name: Check with Pylint
       run: |
         pylint script.tvmaze.scrobbler/libs \
             script.tvmaze.scrobbler/script.py \
             script.tvmaze.scrobbler/service.py
+    - name: Install addon checker
+      run: |
+        pip install -q kodi-addon-checker
+    - name: Check with addon-checker
+      run: |
         kodi-addon-checker --branch leia
