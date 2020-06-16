@@ -37,7 +37,6 @@ What this addon does:
       <icon>resources/images/icon.png</icon>
       <fanart>resources/images/background.jpg</fanart>
     </assets>
-    <news>0.1.0: Beta-version.
-- 0.0.1: Development version.</news>
+    <news>0.1.0: Beta-version.</news>
   </extension>
 </addon>
