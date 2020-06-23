@@ -29,9 +29,7 @@ import pyqrcode
 import six
 from kodi_six import xbmc
 
-from . import medialibrary_api as medialib
-from . import tvmaze_api as tvmaze
-from .gui import DIALOG, ConfirmationDialog, background_progress_dialog
+from . import gui, medialibrary_api as medialib, tvmaze_api as tvmaze
 from .kodi_service import ADDON, ADDON_ID, PROFILE_DIR, ICON, GETTEXT, logger
 
 try:
@@ -63,7 +61,7 @@ def authorize_addon():
     username and API token for scrobbling requests authorization
     """
     if tvmaze.is_authorized():
-        answer = DIALOG.yesno(
+        answer = gui.DIALOG.yesno(
             _('TVmaze Scrobbler'),
             _('The addon is already authorized.[CR]Authorize again?')
         )
@@ -76,38 +74,38 @@ def authorize_addon():
         email = keyboard.getText()
         if re.search(r'^[\w.\-+]+@[\w.-]+\.[\w]+$', email) is None:
             logger.error('Invalid email: {}'.format(email))
-            DIALOG.notification(ADDON_ID, _('Invalid email'), icon='error', time=3000)
+            gui.DIALOG.notification(ADDON_ID, _('Invalid email'), icon='error', time=3000)
             return
         try:
             token, confirm_url = tvmaze.start_authorization(email)
         except tvmaze.AuthorizationError as exc:
             logger.error('TVmaze authorization error: {}'.format(exc))
             message = _('Authorization error: {}').format(exc)
-            DIALOG.notification(ADDON_ID, message, icon='error')
+            gui.DIALOG.notification(ADDON_ID, message, icon='error')
             return
         qrcode_filename = uuid.uuid4().hex + '.png'
         qrcode_path = os.path.join(PROFILE_DIR, qrcode_filename)
         qrcode_image = pyqrcode.create(confirm_url)
         qrcode_image.png(qrcode_path, scale=10)
-        confirmation_dialog = ConfirmationDialog(email, token, confirm_url, qrcode_path)
+        confirmation_dialog = gui.ConfirmationDialog(email, token, confirm_url, qrcode_path)
         confirmation_dialog.doModal()
         if confirmation_dialog.is_confirmed:
             ADDON.setSettingString('username', confirmation_dialog.username)
             ADDON.setSettingString('apikey', confirmation_dialog.apikey)
-            DIALOG.notification(ADDON_ID, _('Addon has been authorized successfully'),
-                                icon=ICON, sound=False, time=3000)
+            gui.DIALOG.notification(ADDON_ID, _('Addon has been authorized successfully'),
+                                    icon=ICON, sound=False, time=3000)
         elif confirmation_dialog.error_message is not None:
             logger.error('Confirmation error: {}'.format(confirmation_dialog.error_message))
             message = _('Confirmation error: {}').format(confirmation_dialog.error_message)
-            DIALOG.notification(ADDON_ID, message, icon='error')
+            gui.DIALOG.notification(ADDON_ID, message, icon='error')
         del confirmation_dialog
 
 
 def reset_authorization():
     # type: () -> None
     """Clear stored username and API key"""
-    if DIALOG.yesno(_('Reset Authorization'),
-                    _('This will clear stored authentication credentials.[CR]Are you sure?')):
+    if gui.DIALOG.yesno(_('Reset Authorization'),
+                        _('This will clear stored authentication credentials.[CR]Are you sure?')):
         ADDON.setSettingString('username', '')
         ADDON.setSettingString('apikey', '')
 
@@ -143,23 +141,11 @@ def _prepare_episode_list(kodi_episode_list):
     return episodes_for_tvmaze
 
 
-def _push_episodes_to_tvmaze(tvmaze_id, episodes):
-    # type: (Union[int, Text], List[Dict[Text, int]]) -> bool
-    """
-    Push episodes statuses of a TV show to TVmaze
-
-    :param tvmaze_id: show ID on TVmaze
-    :param episodes: the list of episodes
-    :return: success status
-    """
-    episodes_for_tvmaze = _prepare_episode_list(episodes)
-    return tvmaze.push_episodes(episodes_for_tvmaze, tvmaze_id)
-
-
 def _load_and_store_tvmaze_id(show_id, provider, kodi_tvshowid):
     # type: (Text, Text, int) -> Optional[int]
-    show_info = tvmaze.get_show_info_by_external_id(show_id, provider)
-    if show_info is None:
+    try:
+        show_info = tvmaze.get_show_info_by_external_id(show_id, provider)
+    except tvmaze.ApiError:
         return None
     tvmaze_id = show_info['id']
     medialib.set_show_uniqueid(kodi_tvshowid, tvmaze_id)
@@ -200,8 +186,16 @@ def _pull_watched_episodes(kodi_tv_shows=None):
         if tvmaze_id is None:
             logger.error('Unable to determine TVmaze id from show info: {}'.format(pformat(show)))
             continue
-        tvmaze_episodes = tvmaze.get_episodes_from_watchlist(tvmaze_id, type_=StatusType.WATCHED)
-        if tvmaze_episodes is None:
+        try:
+            tvmaze_episodes = tvmaze.get_episodes_from_watchlist(tvmaze_id,
+                                                                 type_=StatusType.WATCHED)
+        except tvmaze.ApiError as exc:
+            logger.error('Unable to pull episodes from TVmaze for show "{}": {}'.format(
+                show['label'], exc
+            ))
+            if six.text_type(exc) == tvmaze.AUTHENTICATION_ERROR:
+                gui.authentication_error_notification()
+                return
             continue
         logger.debug('Episodes from TVmaze for {}:\n{}'.format(tvmaze_id, pformat(tvmaze_episodes)))
         tvmaze_shows[show['tvshowid']] = tvmaze_episodes
@@ -248,9 +242,9 @@ def pull_watched_episodes():
         return
     _pull_watched_episodes()
     if ADDON.getSettingBool('show_notifications'):
-        DIALOG.notification(ADDON_ID,
-                            _('Pulled watched episodes from TVmaze'),
-                            icon=ICON, time=3000, sound=False)
+        gui.DIALOG.notification(ADDON_ID,
+                                _('Pulled watched episodes from TVmaze'),
+                                icon=ICON, time=3000, sound=False)
 
 
 def _push_all_episodes(kodi_tv_shows):
@@ -258,7 +252,7 @@ def _push_all_episodes(kodi_tv_shows):
     """Push TV shows to TVmaze"""
     logger.info('Pushing all episodes to TVmaze...')
     success = True
-    with background_progress_dialog(_('TVmaze Scrobbler'), _('Pushing episodes')) as dialog:
+    with gui.background_progress_dialog(_('TVmaze Scrobbler'), _('Pushing episodes')) as dialog:
         shows_count = len(kodi_tv_shows)
         for n, show in enumerate(kodi_tv_shows, 1):
             percent = int(100 * n / shows_count)
@@ -272,21 +266,30 @@ def _push_all_episodes(kodi_tv_shows):
             if tvmaze_id is None:
                 logger.error(
                     'Unable to determine TVmaze id from show info: {}'.format(pformat(show)))
+                success = False
                 continue
             try:
                 episodes = medialib.get_episodes(show['tvshowid'])
             except medialib.NoDataError:
                 logger.warning('TV show "{}" has no episodes'.format(show['label']))
                 continue
-            success = _push_episodes_to_tvmaze(tvmaze_id, episodes)
-            if not success:
+            episodes_for_tvmaze = _prepare_episode_list(episodes)
+            try:
+                tvmaze.push_episodes(episodes_for_tvmaze, tvmaze_id)
+            except tvmaze.ApiError as exc:
                 logger.error(
-                    'Unable to push episodes for show "{}".'.format(show['label']))
+                    'Unable to push episodes for show "{}": {}'.format(show['label'], exc))
+                if six.text_type(exc) == tvmaze.AUTHENTICATION_ERROR:
+                    gui.authentication_error_notification()
+                    return
+                success = False
                 continue
     if success and ADDON.getSettingBool('show_notifications'):
-        DIALOG.notification(ADDON_ID, _('Push completed'), icon=ICON, time=3000, sound=False)
+        gui.DIALOG.notification(ADDON_ID, _('Push completed'), icon=ICON, time=3000, sound=False)
     else:
-        DIALOG.notification(ADDON_ID, _('Push completed with errors'), icon='error')
+        gui.DIALOG.notification(ADDON_ID,
+                                _('Push completed with errors. Check the log for more info.'),
+                                icon='error')
 
 
 def sync_all_episodes():
@@ -318,13 +321,16 @@ def push_single_episode(episode_id):
             'Unable to determine TVmaze id from show info: {}'.format(pformat(tvshow_info)))
         return
     episodes_for_tvmaze = _prepare_episode_list([episode_info])
-    success = tvmaze.push_episodes(episodes_for_tvmaze, tvmaze_id)
-    if success and ADDON.getSettingBool('show_notifications'):
-        DIALOG.notification(
-            ADDON_ID, _('Pushed episode status'), icon=ICON, time=3000, sound=False)
-    else:
-        logger.error('Failed to push episode status.')
-        DIALOG.notification(ADDON_ID, _('Failed to push episode status'), icon='error')
+    try:
+        tvmaze.push_episodes(episodes_for_tvmaze, tvmaze_id)
+    except tvmaze.ApiError as exc:
+        logger.error('Failed to push episode status: {}'.format(exc))
+        gui.DIALOG.notification(ADDON_ID, _('Failed to push episode status: {}'.format(exc)),
+                                icon='error')
+        return
+    if ADDON.getSettingBool('show_notifications'):
+        gui.DIALOG.notification(ADDON_ID,
+                                _('Pushed episode status'), icon=ICON, time=3000, sound=False)
 
 
 def _push_recent_episodes():
@@ -354,15 +360,22 @@ def _push_recent_episodes():
         else:
             episode_mapping[id_mapping[episode['tvshowid']]].append(episode)
     for tvmaze_id, episodes in six.iteritems(episode_mapping):
-        success = _push_episodes_to_tvmaze(tvmaze_id, episodes)
-        if not success:
+        episodes_for_tvmaze = _prepare_episode_list(episodes)
+        try:
+            tvmaze.push_episodes(episodes_for_tvmaze, tvmaze_id)
+        except tvmaze.ApiError as exc:
             logger.error(
-                'Unable to update episodes for show {}.'.format(tvmaze_id))
+                'Unable to update episodes for show {}: {}'.format(tvmaze_id, exc))
+            if six.text_type(exc) == tvmaze.AUTHENTICATION_ERROR:
+                gui.authentication_error_notification()
+                return
             continue
     if success and ADDON.getSettingBool('show_notifications'):
-        DIALOG.notification(ADDON_ID, _('Push completed'), icon=ICON, time=3000, sound=False)
+        gui.DIALOG.notification(ADDON_ID, _('Push completed'), icon=ICON, time=3000, sound=False)
     else:
-        DIALOG.notification(ADDON_ID, _('Push completed with errors'), icon='error')
+        gui.DIALOG.notification(ADDON_ID,
+                                _('Push completed with errors. Check the log for more info.'),
+                                icon='error')
 
 
 def sync_recent_episodes():

@@ -22,7 +22,6 @@ from __future__ import absolute_import, unicode_literals
 from pprint import pformat
 
 import requests
-import six
 
 from .kodi_service import logger, ADDON
 
@@ -45,21 +44,30 @@ SESSION.headers.update({
     'Accept': 'application/json',
 })
 
+AUTHENTICATION_ERROR = 'Invalid username or API key'
 
-@six.python_2_unicode_compatible
+
 class ApiError(Exception):
 
-    def __init__(self, status_code, reason):
-        # type: (int, Text) -> None
-        super(ApiError, self).__init__()
-        self.status_code = status_code
-        self.reason = reason
+    @staticmethod
+    def extract_error_message_from_response(response):
+        # type: (requests.Response) -> Text
+        if 'application/json' in response.headers.get('Content-Type', ''):
+            payload = response.json()
+            return payload.get('message', '')
+        return response.text
 
-    def __str__(self):
-        return '{}: {}; reason: {}'.format(self.__class__.__name__, self.status_code, self.reason)
+    def __init__(self, message='', response=None):
+        # type: (Text, Optional[requests.Response]) -> None
+        self.error_message = message
+        if response is not None:
+            error_message = self.extract_error_message_from_response(response)
+            if error_message:
+                self.error_message = error_message
+        super(ApiError, self).__init__(self.error_message)
 
 
-class AuthorizationError(Exception):
+class AuthorizationError(ApiError):
     pass
 
 
@@ -94,34 +102,31 @@ def _send_request(url, method='get', **requests_kwargs):
     )
     response = method_func(url, auth=auth, **requests_kwargs)
     if not response.ok:
-        logger.error('TVmaze returned error {}: {}'.format(response.status_code, response.text))
-        response.raise_for_status()
+        logger.error('TVmaze returned error {}'.format(response.status_code))
+    logger.debug('API response:\n{}'.format(pformat(response.json())))
     return response
 
 
 def _call_api(path, method='get', **requests_kwargs):
-    # type: (Text, Text, **Optional[Union[tuple, dict, list]]) -> Union[DataType, List[DataType]]
+    # type: (Text, Text, **Optional[Union[tuple, dict, list]]) -> requests.Response
     """
     Call TVmaze API
 
     :param path: API path
     :param method: HTTP method
     :param requests_kwargs: kwagrs to be passed to a Requests call
-    :return: API response data
-    :raises ApiError: on any error response from API
+    :return: Requests response object
+    :raises requests.HTTPError: on any error response from API
     """
     url = API_URL + path
-    try:
-        response = _send_request(url, method, **requests_kwargs)
-    except requests.HTTPError as exc:
-        raise ApiError(exc.response.status_code, exc.response.text)
-    response_data = response.json()
-    logger.debug('API response:\n{}'.format(pformat(response_data)))
-    return response_data
+    response = _send_request(url, method, **requests_kwargs)
+    if not response.ok:
+        response.raise_for_status()
+    return response
 
 
 def _call_user_api(path, method='get', authenticate=False, **requests_kwargs):
-    # type: (Text, Text, bool, **Optional[Union[tuple, dict, list]]) -> Union[DataType, List[DataType]]  # pylint: disable=line-too-long
+    # type: (Text, Text, bool, **Optional[Union[tuple, dict, list]]) -> requests.Response
     """
     Call TVmaze user API with authentication
 
@@ -131,7 +136,7 @@ def _call_user_api(path, method='get', authenticate=False, **requests_kwargs):
     :param requests_kwargs: kwagrs to be passed to a Requests call
     :return: Requests response object
     :raises AuthorizationError: if authentication credentials are not set
-    :raises ApiError: on any error response from API
+    :raises requests.HTTPError: on any error response from API
     """
     if authenticate and not is_authorized():
         raise AuthorizationError('Missing TVmaze username and API key')
@@ -140,15 +145,13 @@ def _call_user_api(path, method='get', authenticate=False, **requests_kwargs):
         username, apikey = _get_credentials()
         auth = (username, apikey)
     url = USER_API_URL + path
-    try:
-        response = _send_request(url, method, auth=auth, **requests_kwargs)
-    except requests.HTTPError as exc:
-        raise ApiError(exc.response.status_code, exc.response.text)
-    if response.status_code == 207:
-        raise ApiError(response.status_code, response.text)
-    response_data = response.json()
-    logger.debug('API response:\n{}'.format(pformat(response_data)))
-    return response_data
+    response = _send_request(url, method, auth=auth, **requests_kwargs)
+    if not response.ok:
+        response.raise_for_status()
+    elif response.status_code == 207:
+        raise requests.HTTPError('Update completed with errors', response=response)
+    logger.debug('API response:\n{}'.format(pformat(response.json())))
+    return response
 
 
 def start_authorization(email):
@@ -164,9 +167,10 @@ def start_authorization(email):
         'email_confirmation': True,
     }
     try:
-        response_data = _call_user_api(AUTH_START_PATH, 'post', authenticate=False, json=data)
-    except ApiError as exc:
-        raise AuthorizationError(six.text_type(exc))
+        response = _call_user_api(AUTH_START_PATH, 'post', authenticate=False, json=data)
+    except requests.HTTPError as exc:
+        raise AuthorizationError(response=exc.response)
+    response_data = response.json()
     return response_data.get('token'), response_data.get('confirm_url')
 
 
@@ -178,63 +182,66 @@ def poll_authorization(token):
     :return: (TVmaze username, API key) tuple
     """
     try:
-        response_data = _call_user_api(AUTH_POLL_PATH, 'post', json={'token': token})
-    except ApiError as exc:
-        if exc.status_code == 403:
+        response = _call_user_api(AUTH_POLL_PATH, 'post', json={'token': token})
+    except requests.HTTPError as exc:
+        if exc.response.status_code == 403:
             return None
-        raise AuthorizationError(six.text_type(exc))
+        raise AuthorizationError(response=exc.response)
+    response_data = response.json()
     return response_data.get('username'), response_data.get('apikey')
 
 
 def push_episodes(episodes, show_id, provider='tvmaze'):
-    # type: (List[Dict[Text, int]], Union[int, Text], Text) -> bool
+    # type: (List[Dict[Text, int]], Union[int, Text], Text) -> None
     """
     Send statuses of episodes to TVmase
 
     :param episodes: the list of episodes to update
     :param show_id: TV show ID in tvmaze, thetvdb or imdb online databases
     :param provider: ID provider
-    :return: success status
     """
     provider += '_id'
     params = {provider: show_id}
     try:
         _call_user_api(SCROBBLE_SHOWS_PATH, 'post', authenticate=True, params=params, json=episodes)
-    except ApiError:
-        return False
-    return True
+    except requests.HTTPError as exc:
+        raise ApiError(response=exc.response)
 
 
 def get_show_info_by_external_id(show_id, provider):
-    # type: (Text, Text) -> Optional[DataType]
+    # type: (Text, Text) -> DataType
     """
     Get brief show info from TVmaze by external ID
 
     :param show_id: show ID in an external online DB
     :param provider: online DB provider
-    :return: show info from TVmaze or None
+    :return: show info from TVmaze
+    :raises ApiError: on any API error
     """
     params = {provider: show_id}
     try:
-        return _call_api(SHOW_LOOKUP_PATH, 'get', params=params)
-    except ApiError:
-        return None
+        response = _call_api(SHOW_LOOKUP_PATH, 'get', params=params)
+    except requests.HTTPError as exc:
+        raise ApiError(response=exc.response)
+    return response.json()
 
 
 def get_episodes_from_watchlist(tvmaze_id, type_=None):
-    # type: (Union[int, Text], Optional[int]) -> Optional[List[DataType]]
+    # type: (Union[int, Text], Optional[int]) -> List[DataType]
     """
     Get episodes for a TV show from user's watchlist on TVmaze
 
     :param tvmaze_id: show ID on TVmaze
     :param type_: get only episodes with the given status type
     :return: the list of episode infos from TVmaze
+    :raises ApiError: on any API error
     """
     path = '{}/{}'.format(SCROBBLE_SHOWS_PATH, tvmaze_id)
     params = {'embed': 'episode'}
     if type_ is not None:
         params['type'] = type_
     try:
-        return _call_user_api(path, 'get', authenticate=True, params=params)
-    except ApiError:
-        return None
+        response = _call_user_api(path, 'get', authenticate=True, params=params)
+    except requests.HTTPError as exc:
+        raise ApiError(response=exc.response)
+    return response.json()

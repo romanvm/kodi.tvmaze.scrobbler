@@ -29,7 +29,7 @@ from kodi_six.xbmcgui import Dialog, DialogProgressBG
 from six import text_type
 from six.moves import _thread as thread
 
-from .kodi_service import GETTEXT as _
+from .kodi_service import ADDON_ID, GETTEXT as _
 from .tvmaze_api import poll_authorization, AuthorizationError
 
 try:
@@ -132,3 +132,8 @@ def background_progress_dialog(heading, message):
         yield dialog
     finally:
         dialog.close()
+
+
+def authentication_error_notification():
+    DIALOG.notification(ADDON_ID,
+                        'Authentication failed. You need to authorize the addon.', icon='error')

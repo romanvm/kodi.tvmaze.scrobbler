@@ -72,7 +72,7 @@ msgid "Push completed"
 msgstr ""
 
 msgctxt "#32016"
-msgid "Push completed with errors"
+msgid "Push completed with errors. Check the log for more info."
 msgstr ""
 
 msgctxt "#32017"
@@ -113,4 +113,8 @@ msgstr ""
 
 msgctxt "#32026"
 msgid "This will clear stored authentication credentials.[CR]Are you sure?"
+msgstr ""
+
+msgctxt "#32027"
+msgid "Authentication failed. You need to authorize the addon."
 msgstr ""
