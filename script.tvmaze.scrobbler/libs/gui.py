@@ -63,8 +63,8 @@ class ConfirmationLoop(threading.Thread):
                 except AuthorizationError as exc:
                     self.error_message = text_type(exc)
                     break
-                now = time.time()
                 if result is None:
+                    now = time.time()
                     continue
                 self.username, self.apikey = result
                 break
