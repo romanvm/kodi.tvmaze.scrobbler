@@ -54,7 +54,11 @@ class ApiError(Exception):
         # type: (requests.Response) -> Text
         if 'application/json' in response.headers.get('Content-Type', ''):
             payload = response.json()
-            return payload.get('message', '')
+            name = payload.get('name', '')
+            message = payload.get('message', '')
+            if name and message:
+                return '{}: {}'.format(name, message)
+            return message or name
         return response.text
 
     def __init__(self, message='', response=None):
