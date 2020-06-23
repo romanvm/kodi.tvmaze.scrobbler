@@ -16,7 +16,7 @@ msgid "Confirm Addon Authorization"
 msgstr ""
 
 msgctxt "#32002"
-msgid "To authorize the addon open the link below[CR][B]{confirm_url}[/B][CR]or check your mailbox[CR][B]{email}[/B]"
+msgid "To authorize the addon open the link below[CR][B]{confirm_url}[/B],[CR]scan the QR-code or check your mailbox[CR][B]{email}[/B]"
 msgstr ""
 
 msgctxt "#32003"
@@ -117,4 +117,8 @@ msgstr ""
 
 msgctxt "#32027"
 msgid "Authentication failed. You need to authorize the addon."
+msgstr ""
+
+msgctxt "#32028"
+msgid "This window will close automatically after authorization."
 msgstr ""

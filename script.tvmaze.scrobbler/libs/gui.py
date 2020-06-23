@@ -29,7 +29,7 @@ from kodi_six.xbmcgui import Dialog, DialogProgressBG
 from six import text_type
 from six.moves import _thread as thread
 
-from .kodi_service import ADDON_ID, GETTEXT as _
+from .kodi_service import GETTEXT as _
 from .tvmaze_api import poll_authorization, AuthorizationError
 
 try:
@@ -83,7 +83,7 @@ class ConfirmationDialog(pyxbmct.AddonDialogWindow):
         self.apikey = ''
         self.error_message = None
         self._confirmation_loop = ConfirmationLoop(self, token)
-        self.setGeometry(600, 600, 7, 5)
+        self.setGeometry(600, 600, 8, 5)
         self._set_controls()
         self._set_connections()
 
@@ -92,14 +92,19 @@ class ConfirmationDialog(pyxbmct.AddonDialogWindow):
         self.placeControl(textbox, 0, 0, 2, 5)
         textbox.setText(_(
             'To authorize the addon open the link below[CR]'
-            '[B]{confirm_url}[/B][CR]'
-            'or check your mailbox[CR][B]{email}[/B]').format(
+            '[B]{confirm_url}[/B],[CR]'
+            'scan the QR-code or check your mailbox[CR]'
+            '[B]{email}[/B]').format(
                 confirm_url=self._confirm_url,
                 email=self._email))
+        textbox.autoScroll(1000, 1000, 1000)
         qr_code = pyxbmct.Image(self._qrcode_path)
-        self.placeControl(qr_code, 2, 1, 4, 3, pad_x=20)
+        self.placeControl(qr_code, 2, 1, 4, 3, pad_x=35)
+        autoclose_label = pyxbmct.FadeLabel()
+        self.placeControl(autoclose_label, 6, 0, columnspan=5)
+        autoclose_label.addLabel(_('This window will close automatically after authorization.'))
         self._cancel_btn = pyxbmct.Button(_('Cancel'))
-        self.placeControl(self._cancel_btn, 6, 2, pad_x=-10, pad_y=20)
+        self.placeControl(self._cancel_btn, 7, 2, pad_x=-10, pad_y=10)
         self.setFocus(self._cancel_btn)
 
     def _set_connections(self):
