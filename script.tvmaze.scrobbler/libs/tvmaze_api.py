@@ -83,6 +83,12 @@ def is_authorized():
     return all(_get_credentials())
 
 
+def clear_credentials():
+    # type: () -> None
+    ADDON.setSettingString('username', '')
+    ADDON.setSettingString('apikey', '')
+
+
 def _send_request(url, method='get', **requests_kwargs):
     # type: (Text, Text, **Optional[Union[tuple, dict, list]]) -> requests.Response
     """

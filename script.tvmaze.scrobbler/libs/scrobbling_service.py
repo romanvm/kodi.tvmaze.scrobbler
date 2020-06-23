@@ -106,8 +106,15 @@ def reset_authorization():
     """Clear stored username and API key"""
     if gui.DIALOG.yesno(_('Reset Authorization'),
                         _('This will clear stored authentication credentials.[CR]Are you sure?')):
-        ADDON.setSettingString('username', '')
-        ADDON.setSettingString('apikey', '')
+        tvmaze.clear_credentials()
+
+
+def _handle_authentication_error():
+    # type: () -> None
+    tvmaze.clear_credentials()
+    gui.DIALOG.notification(ADDON_ID,
+                            'Authentication failed. You need to authorize the addon.',
+                            icon='error')
 
 
 def _get_unique_id(uniqueid_dict):
@@ -194,7 +201,7 @@ def _pull_watched_episodes(kodi_tv_shows=None):
                 show['label'], exc
             ))
             if six.text_type(exc) == tvmaze.AUTHENTICATION_ERROR:
-                gui.authentication_error_notification()
+                _handle_authentication_error()
                 return
             continue
         logger.debug('Episodes from TVmaze for {}:\n{}'.format(tvmaze_id, pformat(tvmaze_episodes)))
@@ -280,7 +287,7 @@ def _push_all_episodes(kodi_tv_shows):
                 logger.error(
                     'Unable to push episodes for show "{}": {}'.format(show['label'], exc))
                 if six.text_type(exc) == tvmaze.AUTHENTICATION_ERROR:
-                    gui.authentication_error_notification()
+                    _handle_authentication_error()
                     return
                 success = False
                 continue
@@ -367,7 +374,7 @@ def _push_recent_episodes():
             logger.error(
                 'Unable to update episodes for show {}: {}'.format(tvmaze_id, exc))
             if six.text_type(exc) == tvmaze.AUTHENTICATION_ERROR:
-                gui.authentication_error_notification()
+                _handle_authentication_error()
                 return
             continue
     if success and ADDON.getSettingBool('show_notifications'):

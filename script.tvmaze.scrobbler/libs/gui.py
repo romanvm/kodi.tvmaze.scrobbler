@@ -132,8 +132,3 @@ def background_progress_dialog(heading, message):
         yield dialog
     finally:
         dialog.close()
-
-
-def authentication_error_notification():
-    DIALOG.notification(ADDON_ID,
-                        'Authentication failed. You need to authorize the addon.', icon='error')
