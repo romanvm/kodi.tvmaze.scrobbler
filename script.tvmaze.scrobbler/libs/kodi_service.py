@@ -40,6 +40,7 @@ except ImportError:
 
 ADDON = Addon()
 ADDON_ID = ADDON.getAddonInfo('id')
+ADDON_NAME = ADDON.getAddonInfo('name')
 VERSION = ADDON.getAddonInfo('version')
 PROFILE_DIR = xbmc.translatePath(ADDON.getAddonInfo('profile'))
 ADDON_DIR = xbmc.translatePath(ADDON.getAddonInfo('path'))

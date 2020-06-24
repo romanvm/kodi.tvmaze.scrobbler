@@ -122,3 +122,8 @@ msgstr ""
 msgctxt "#32028"
 msgid "This window will close automatically after authorization."
 msgstr ""
+
+msgctxt "#32029"
+msgid "Do you want to sync your TV shows with TVmaze now?"
+msgstr ""
+
