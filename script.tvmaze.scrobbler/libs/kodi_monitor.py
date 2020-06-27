@@ -50,5 +50,5 @@ class UpdateMonitor(xbmc.Monitor):  # pylint: disable=missing-docstring
     def onScanFinished(self, library):
         # type: (Text) -> None
         if library == 'video':
-            scrobbler.sync_recent_episodes()
+            scrobbler.sync_recent_episodes(show_warning=False)
             logger.debug('Recent episodes updated')

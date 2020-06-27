@@ -29,8 +29,8 @@ import pyqrcode
 import six
 from kodi_six import xbmc
 
-from . import gui, medialibrary_api as medialib, tvmaze_api as tvmaze
-from .kodi_service import ADDON, ADDON_NAME, PROFILE_DIR, ICON, GETTEXT, logger
+from . import gui, medialibrary_api as medialib, tvmaze_api as tvmaze, kodi_service as kodi
+from .kodi_service import logger
 
 try:
     # pylint: disable=unused-import
@@ -38,7 +38,7 @@ try:
 except ImportError:
     pass
 
-_ = GETTEXT
+_ = kodi.GETTEXT
 
 SUPPORTED_IDS = ('tvmaze', 'tvdb', 'imdb')
 
@@ -74,32 +74,33 @@ def authorize_addon():
         email = keyboard.getText()
         if re.search(r'^[\w.\-+]+@[\w.-]+\.[\w]+$', email) is None:
             logger.error('Invalid email: {}'.format(email))
-            gui.DIALOG.notification(ADDON_NAME, _('Invalid email'), icon='error', time=3000)
+            gui.DIALOG.notification(kodi.ADDON_NAME, _('Invalid email'), icon='error', time=3000)
             return
         try:
             token, confirm_url = tvmaze.start_authorization(email)
         except tvmaze.AuthorizationError as exc:
             logger.error('TVmaze authorization error: {}'.format(exc))
             message = _('Authorization error: {}').format(exc)
-            gui.DIALOG.notification(ADDON_NAME, message, icon='error')
+            gui.DIALOG.notification(kodi.ADDON_NAME, message, icon='error')
             return
         qrcode_filename = uuid.uuid4().hex + '.png'
-        qrcode_path = os.path.join(PROFILE_DIR, qrcode_filename)
+        qrcode_path = os.path.join(kodi.ADDON_PROFILE_DIR, qrcode_filename)
         qrcode_image = pyqrcode.create(confirm_url)
         qrcode_image.png(qrcode_path, scale=10)
         confirmation_dialog = gui.ConfirmationDialog(email, token, confirm_url, qrcode_path)
         confirmation_dialog.doModal()
         if confirmation_dialog.is_confirmed:
-            ADDON.setSettingString('username', confirmation_dialog.username)
-            ADDON.setSettingString('apikey', confirmation_dialog.apikey)
-            gui.DIALOG.notification(ADDON_NAME, _('Addon has been authorized successfully'),
-                                    icon=ICON, sound=False, time=3000)
-            if gui.DIALOG.yesno(ADDON, _('Do you want to sync your TV shows with TVmaze now?')):
+            kodi.ADDON.setSettingString('username', confirmation_dialog.username)
+            kodi.ADDON.setSettingString('apikey', confirmation_dialog.apikey)
+            gui.DIALOG.notification(kodi.ADDON_NAME, _('Addon has been authorized successfully'),
+                                    icon=kodi.ADDON_ICON, sound=False, time=3000)
+            if gui.DIALOG.yesno(kodi.ADDON,
+                                _('Do you want to sync your TV shows with TVmaze now?')):
                 sync_all_episodes()
         elif confirmation_dialog.error_message is not None:
             logger.error('Confirmation error: {}'.format(confirmation_dialog.error_message))
             message = _('Confirmation error: {}').format(confirmation_dialog.error_message)
-            gui.DIALOG.notification(ADDON_NAME, message, icon='error')
+            gui.DIALOG.notification(kodi.ADDON_NAME, message, icon='error')
         del confirmation_dialog
 
 
@@ -114,7 +115,7 @@ def reset_authorization():
 def _handle_authentication_error():
     # type: () -> None
     tvmaze.clear_credentials()
-    gui.DIALOG.notification(ADDON_NAME,
+    gui.DIALOG.notification(kodi.ADDON_NAME,
                             'Authentication failed. You need to authorize the addon.',
                             icon='error')
 
@@ -250,10 +251,10 @@ def pull_watched_episodes():
         logger.warning('Addon is not authorized')
         return
     _pull_watched_episodes()
-    if ADDON.getSettingBool('show_notifications'):
-        gui.DIALOG.notification(ADDON_NAME,
+    if kodi.ADDON.getSettingBool('show_notifications'):
+        gui.DIALOG.notification(kodi.ADDON_NAME,
                                 _('Pulled watched episodes from TVmaze'),
-                                icon=ICON, time=3000, sound=False)
+                                icon=kodi.ADDON_ICON, time=3000, sound=False)
 
 
 def _push_all_episodes(kodi_tv_shows):
@@ -293,10 +294,11 @@ def _push_all_episodes(kodi_tv_shows):
                     return
                 success = False
                 continue
-    if success and ADDON.getSettingBool('show_notifications'):
-        gui.DIALOG.notification(ADDON_NAME, _('Push completed'), icon=ICON, time=3000, sound=False)
+    if success and kodi.ADDON.getSettingBool('show_notifications'):
+        gui.DIALOG.notification(kodi.ADDON_NAME, _('Push completed'), icon=kodi.ADDON_ICON,
+                                time=3000, sound=False)
     else:
-        gui.DIALOG.notification(ADDON_NAME,
+        gui.DIALOG.notification(kodi.ADDON_NAME,
                                 _('Push completed with errors. Check the log for more info.'),
                                 icon='error')
 
@@ -309,8 +311,10 @@ def sync_all_episodes():
         return
     tv_shows = _get_tv_shows_from_kodi()
     if tv_shows is None:
+        gui.DIALOG.notification(kodi.ADDON_NAME, _('Medialibrary has no TV episodes'),
+                                icon='warning')
         return
-    if ADDON.getSettingBool('pull_from_tvmaze'):
+    if kodi.ADDON.getSettingBool('pull_from_tvmaze'):
         _pull_watched_episodes(tv_shows)
     _push_all_episodes(tv_shows)
 
@@ -334,24 +338,20 @@ def push_single_episode(episode_id):
         tvmaze.push_episodes(episodes_for_tvmaze, tvmaze_id)
     except tvmaze.ApiError as exc:
         logger.error('Failed to push episode status: {}'.format(exc))
-        gui.DIALOG.notification(ADDON_NAME, _('Failed to push episode status: {}'.format(exc)),
+        gui.DIALOG.notification(kodi.ADDON_NAME, _('Failed to push episode status: {}'.format(exc)),
                                 icon='error')
         return
-    if ADDON.getSettingBool('show_notifications'):
-        gui.DIALOG.notification(ADDON_NAME,
-                                _('Pushed episode status'), icon=ICON, time=3000, sound=False)
+    # Fixme: resolve the issue with extra episode push after pulling from TVmaze
+    # if kodi.ADDON.getSettingBool('show_notifications'):
+    #     gui.DIALOG.notification(kodi.ADDON_NAME,
+    #                             _('Pushed episode status'), icon=kodi.ADDON_ICON, time=3000,
+    #                             sound=False)
 
 
-def _push_recent_episodes():
-    # type: () -> None
+def _push_recent_episodes(recent_episodes):
+    # type: (List[Dict[Text, Any]]) -> None
     """Push recent episodes to TVmaze"""
     logger.debug('Pushing recent episodes to TVmaze')
-    if ADDON.getSettingBool('pull_from_tvmaze'):
-        _pull_watched_episodes()
-    try:
-        recent_episodes = medialib.get_recent_episodes()
-    except medialib.NoDataError:
-        return
     success = True
     id_mapping = {}
     episode_mapping = defaultdict(list)
@@ -379,22 +379,33 @@ def _push_recent_episodes():
                 _handle_authentication_error()
                 return
             continue
-    if success and ADDON.getSettingBool('show_notifications'):
-        gui.DIALOG.notification(ADDON_NAME, _('Push completed'), icon=ICON, time=3000, sound=False)
+    if success and kodi.ADDON.getSettingBool('show_notifications'):
+        gui.DIALOG.notification(kodi.ADDON_NAME, _('Push completed'), icon=kodi.ADDON_ICON,
+                                time=3000, sound=False)
     else:
-        gui.DIALOG.notification(ADDON_NAME,
+        gui.DIALOG.notification(kodi.ADDON_NAME,
                                 _('Push completed with errors. Check the log for more info.'),
                                 icon='error')
 
 
-def sync_recent_episodes():
+def sync_recent_episodes(show_warning=True):
+    # type: (bool) -> None
     """Pull watched episodes from TVmaze and then push recent episodes to TVmaze"""
     if not tvmaze.is_authorized():
         logger.warning('Addon is not authorized')
         return
-    if ADDON.getSettingBool('pull_from_tvmaze'):
+    if kodi.ADDON.getSettingBool('pull_from_tvmaze'):
         _pull_watched_episodes()
-    _push_recent_episodes()
+    try:
+        recent_episodes = medialib.get_recent_episodes()
+        if not recent_episodes:
+            raise medialib.NoDataError
+    except medialib.NoDataError:
+        if show_warning:
+            gui.DIALOG.notification(kodi.ADDON_NAME, _('Medialibrary has no TV episodes'),
+                                    icon='warning')
+        return
+    _push_recent_episodes(recent_episodes)
 
 
 def get_menu_actions():

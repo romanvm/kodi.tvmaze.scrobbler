@@ -29,7 +29,7 @@ from pprint import pformat
 
 import six
 from six.moves import cPickle as pickle
-from kodi_six import xbmc
+from kodi_six import xbmc, xbmcgui
 from kodi_six.xbmcaddon import Addon
 
 try:
@@ -41,13 +41,15 @@ except ImportError:
 ADDON = Addon()
 ADDON_ID = ADDON.getAddonInfo('id')
 ADDON_NAME = ADDON.getAddonInfo('name')
-VERSION = ADDON.getAddonInfo('version')
-PROFILE_DIR = xbmc.translatePath(ADDON.getAddonInfo('profile'))
+ADDON_VERSION = ADDON.getAddonInfo('version')
+ADDON_PROFILE_DIR = xbmc.translatePath(ADDON.getAddonInfo('profile'))
 ADDON_DIR = xbmc.translatePath(ADDON.getAddonInfo('path'))
-ICON = xbmc.translatePath(ADDON.getAddonInfo('icon'))
+ADDON_ICON = xbmc.translatePath(ADDON.getAddonInfo('icon'))
 
-if not os.path.exists(PROFILE_DIR):
-    os.mkdir(PROFILE_DIR)
+_WINDOW = xbmcgui.Window(10000)
+
+if not os.path.exists(ADDON_PROFILE_DIR):
+    os.mkdir(ADDON_PROFILE_DIR)
 
 
 class logger(object):  # pylint: disable=invalid-name
@@ -61,7 +63,7 @@ class logger(object):  # pylint: disable=invalid-name
         xbmc.log(
             cls.FORMAT.format(
                 id=ADDON_ID,
-                version=VERSION,
+                version=ADDON_VERSION,
                 filename=os.path.basename(curr_frame.f_back.f_back.f_code.co_filename),
                 lineno=curr_frame.f_back.f_back.f_lineno,
                 message=message
@@ -103,7 +105,7 @@ class LocalizationService(object):
         )
         if not os.path.exists(self._en_gb_string_po_path):
             raise self.LocalizationError('Missing English strings.po localization file')
-        self._string_mapping_path = os.path.join(PROFILE_DIR, 'strings-map.pickle')
+        self._string_mapping_path = os.path.join(ADDON_PROFILE_DIR, 'strings-map.pickle')
         self._mapping = self._load_strings_mapping()  # type: Dict[Text, int]
 
     def _load_strings_po(self):  # pylint: disable=missing-docstring

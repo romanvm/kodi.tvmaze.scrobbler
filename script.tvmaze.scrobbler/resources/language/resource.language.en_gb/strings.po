@@ -127,3 +127,6 @@ msgctxt "#32029"
 msgid "Do you want to sync your TV shows with TVmaze now?"
 msgstr ""
 
+msgctxt "#32030"
+msgid "Medialibrary has no TV episodes"
+msgstr ""
