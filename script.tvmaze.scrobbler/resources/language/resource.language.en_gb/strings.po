@@ -56,31 +56,31 @@ msgid "TVmaze Scrobbler"
 msgstr ""
 
 msgctxt "#32012"
-msgid "Pushing episodes"
+msgid "Syncing episodes"
 msgstr ""
 
 msgctxt "#32013"
-msgid "Pushing episodes for show \"{show_name}\": {count}/{total}"
+msgid "Syncing episodes for show \"{show_name}\": {count}/{total}"
 msgstr ""
 
 msgctxt "#32014"
-msgid "Push all shows"
+msgid "Sync all shows"
 msgstr ""
 
 msgctxt "#32015"
-msgid "Push completed"
+msgid "Sync completed"
 msgstr ""
 
 msgctxt "#32016"
-msgid "Push completed with errors. Check the log for more info."
+msgid "Sync completed with errors. Check the log for more info."
 msgstr ""
 
 msgctxt "#32017"
-msgid "Failed to push episode status"
+msgid "Failed to sync episode status"
 msgstr ""
 
 msgctxt "#32018"
-msgid "Pushed episode status"
+msgid "Synced episode status"
 msgstr ""
 
 msgctxt "#32019"
@@ -88,15 +88,15 @@ msgid "Addon has been authorized successfully"
 msgstr ""
 
 msgctxt "#32020"
-msgid "Push recent episodes"
+msgid "Sync recently added episodes"
 msgstr ""
 
 msgctxt "#32021"
-msgid "Pull watched episodes from TVmaze"
+msgid "Sync watched episodes from TVmaze"
 msgstr ""
 
 msgctxt "#32022"
-msgid "Pulled watched episodes from TVmaze"
+msgid "Synced watched episodes from TVmaze"
 msgstr ""
 
 msgctxt "#32023"

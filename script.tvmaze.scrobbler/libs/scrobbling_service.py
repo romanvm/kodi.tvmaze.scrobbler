@@ -253,7 +253,7 @@ def pull_watched_episodes():
     _pull_watched_episodes()
     if kodi.ADDON.getSettingBool('show_notifications'):
         gui.DIALOG.notification(kodi.ADDON_NAME,
-                                _('Pulled watched episodes from TVmaze'),
+                                _('Synced watched episodes from TVmaze'),
                                 icon=kodi.ADDON_ICON, time=3000, sound=False)
 
 
@@ -262,11 +262,11 @@ def _push_all_episodes(kodi_tv_shows):
     """Push TV shows to TVmaze"""
     logger.info('Pushing all episodes to TVmaze...')
     success = True
-    with gui.background_progress_dialog(_('TVmaze Scrobbler'), _('Pushing episodes')) as dialog:
+    with gui.background_progress_dialog(_('TVmaze Scrobbler'), _('Syncing episodes')) as dialog:
         shows_count = len(kodi_tv_shows)
         for n, show in enumerate(kodi_tv_shows, 1):
             percent = int(100 * n / shows_count)
-            message = _(r'Pushing episodes for show \"{show_name}\": {count}/{total}').format(
+            message = _(r'Syncing episodes for show \"{show_name}\": {count}/{total}').format(
                 show_name=show['label'],
                 count=n,
                 total=shows_count
@@ -295,11 +295,11 @@ def _push_all_episodes(kodi_tv_shows):
                 success = False
                 continue
     if success and kodi.ADDON.getSettingBool('show_notifications'):
-        gui.DIALOG.notification(kodi.ADDON_NAME, _('Push completed'), icon=kodi.ADDON_ICON,
+        gui.DIALOG.notification(kodi.ADDON_NAME, _('Sync completed'), icon=kodi.ADDON_ICON,
                                 time=3000, sound=False)
     else:
         gui.DIALOG.notification(kodi.ADDON_NAME,
-                                _('Push completed with errors. Check the log for more info.'),
+                                _('Sync completed with errors. Check the log for more info.'),
                                 icon='error')
 
 
@@ -338,13 +338,15 @@ def push_single_episode(episode_id):
         tvmaze.push_episodes(episodes_for_tvmaze, tvmaze_id)
     except tvmaze.ApiError as exc:
         logger.error('Failed to push episode status: {}'.format(exc))
-        gui.DIALOG.notification(kodi.ADDON_NAME, _('Failed to push episode status: {}'.format(exc)),
-                                icon='error')
+        if six.text_type(exc) == tvmaze.AUTHENTICATION_ERROR:
+            _handle_authentication_error()
+        # gui.DIALOG.notification(kodi.ADDON_NAME, _('Failed to sync episode status: {}'.format(exc)),
+        #                         icon='error')
         return
     # Fixme: resolve the issue with extra episode push after pulling from TVmaze
     # if kodi.ADDON.getSettingBool('show_notifications'):
     #     gui.DIALOG.notification(kodi.ADDON_NAME,
-    #                             _('Pushed episode status'), icon=kodi.ADDON_ICON, time=3000,
+    #                             _('Synced episode status'), icon=kodi.ADDON_ICON, time=3000,
     #                             sound=False)
 
 
@@ -380,11 +382,11 @@ def _push_recent_episodes(recent_episodes):
                 return
             continue
     if success and kodi.ADDON.getSettingBool('show_notifications'):
-        gui.DIALOG.notification(kodi.ADDON_NAME, _('Push completed'), icon=kodi.ADDON_ICON,
+        gui.DIALOG.notification(kodi.ADDON_NAME, _('Sync completed'), icon=kodi.ADDON_ICON,
                                 time=3000, sound=False)
     else:
         gui.DIALOG.notification(kodi.ADDON_NAME,
-                                _('Push completed with errors. Check the log for more info.'),
+                                _('Sync completed with errors. Check the log for more info.'),
                                 icon='error')
 
 
@@ -418,9 +420,9 @@ def get_menu_actions():
     actions = [(_('Authorize the addon'), authorize_addon)]
     if tvmaze.is_authorized():
         actions = [
-            (_('Push all shows'), sync_all_episodes),
-            (_('Push recent episodes'), sync_recent_episodes),
-            (_('Pull watched episodes from TVmaze'), pull_watched_episodes),
+            (_('Sync all shows'), sync_all_episodes),
+            (_('Sync recently added episodes'), sync_recent_episodes),
+            (_('Sync watched episodes from TVmaze'), pull_watched_episodes),
             (_('Reset Authorization'), reset_authorization),
         ] + actions
     return actions
