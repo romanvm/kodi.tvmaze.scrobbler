@@ -340,7 +340,8 @@ def push_single_episode(episode_id):
         logger.error('Failed to push episode status: {}'.format(exc))
         if six.text_type(exc) == tvmaze.AUTHENTICATION_ERROR:
             _handle_authentication_error()
-        # gui.DIALOG.notification(kodi.ADDON_NAME, _('Failed to sync episode status: {}'.format(exc)),
+        # gui.DIALOG.notification(kodi.ADDON_NAME,
+        #                         _('Failed to sync episode status: {}'.format(exc)),
         #                         icon='error')
         return
     # Fixme: resolve the issue with extra episode push after pulling from TVmaze
