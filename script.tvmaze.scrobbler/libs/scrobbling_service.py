@@ -70,13 +70,10 @@ def authorize_addon():
     The function sends authorization request to TVmaze and saves TVmaze
     username and API token for scrobbling requests authorization
     """
-    if tvmaze.is_authorized():
-        answer = gui.DIALOG.yesno(
+    if tvmaze.is_authorized() and not gui.DIALOG.yesno(
             _('TVmaze Scrobbler'),
-            _('The addon is already authorized.[CR]Authorize again?')
-        )
-        if not answer:
-            return
+            _('The addon is already authorized.[CR]Authorize again?')):
+        return
     keyboard = xbmc.Keyboard()
     keyboard.setHeading(_('Your TVmaze account email'))
     keyboard.doModal()
