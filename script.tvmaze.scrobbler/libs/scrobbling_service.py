@@ -52,6 +52,16 @@ class StatusType(object):  # pylint: disable=too-few-public-methods
     SKIPPED = 2
 
 
+def _create_and_save_qrcode(string):
+    # type: (Text) -> Text
+    """Create a QR-code from a string and save it to the addon profile directory"""
+    qrcode_image = pyqrcode.create(string)
+    qrcode_filename = uuid.uuid4().hex + '.png'
+    qrcode_path = os.path.join(kodi.ADDON_PROFILE_DIR, qrcode_filename)
+    qrcode_image.png(qrcode_path, scale=10)
+    return qrcode_path
+
+
 def authorize_addon():
     # type: () -> None
     """
@@ -83,10 +93,7 @@ def authorize_addon():
             message = _('Authorization error: {}').format(exc)
             gui.DIALOG.notification(kodi.ADDON_NAME, message, icon='error')
             return
-        qrcode_filename = uuid.uuid4().hex + '.png'
-        qrcode_path = os.path.join(kodi.ADDON_PROFILE_DIR, qrcode_filename)
-        qrcode_image = pyqrcode.create(confirm_url)
-        qrcode_image.png(qrcode_path, scale=10)
+        qrcode_path = _create_and_save_qrcode(confirm_url)
         confirmation_dialog = gui.ConfirmationDialog(email, token, confirm_url, qrcode_path)
         confirmation_dialog.doModal()
         if confirmation_dialog.is_confirmed:
