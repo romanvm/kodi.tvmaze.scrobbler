@@ -86,8 +86,8 @@ def authorize_addon():
         try:
             token, confirm_url = tvmaze.start_authorization(email)
         except tvmaze.AuthorizationError as exc:
-            logger.error('TVmaze authorization error: {}'.format(exc))
             message = _('Authorization error: {}').format(exc)
+            logger.error(message)
             gui.DIALOG.notification(kodi.ADDON_NAME, message, icon='error')
             return
         qrcode_path = _create_and_save_qrcode(confirm_url)
