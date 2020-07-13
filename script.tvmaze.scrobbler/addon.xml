@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <addon id="script.tvmaze.scrobbler"
    name="TVmaze Scrobbler/Tracker"
-   version="0.2.0"
+   version="0.2.1"
    provider-name="Roman V.M.">
   <requires>
     <import addon="xbmc.python" version="2.26.0" />
@@ -37,7 +37,8 @@ What this addon does:
       <icon>resources/images/icon.png</icon>
       <fanart>resources/images/background.jpg</fanart>
     </assets>
-    <news>0.2.0: Beta version 2.
-0.1.0: Beta version 1.</news>
+    <news>- 0.2.1: Bug fixing.
+- 0.2.0: Beta version 2.
+- 0.1.0: Beta version 1.</news>
   </extension>
 </addon>
