@@ -71,7 +71,7 @@ def authorize_addon():
     username and API token for scrobbling requests authorization
     """
     if tvmaze.is_authorized() and not gui.DIALOG.yesno(
-            _('TVmaze Scrobbler'),
+            kodi.ADDON_NAME,
             _('The addon is already authorized.[CR]Authorize again?')):
         return
     keyboard = xbmc.Keyboard()
@@ -98,7 +98,7 @@ def authorize_addon():
             kodi.ADDON.setSettingString('apikey', confirmation_dialog.apikey)
             gui.DIALOG.notification(kodi.ADDON_NAME, _('Addon has been authorized successfully'),
                                     icon=kodi.ADDON_ICON, sound=False, time=3000)
-            if gui.DIALOG.yesno(kodi.ADDON,
+            if gui.DIALOG.yesno(kodi.ADDON_NAME,
                                 _('Do you want to sync your TV shows with TVmaze now?')):
                 sync_all_episodes()
         elif confirmation_dialog.error_message is not None:
