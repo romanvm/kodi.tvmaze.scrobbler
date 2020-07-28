@@ -146,8 +146,8 @@ def _prepare_episode_list(kodi_episode_list):
     episodes_for_tvmaze = {"direct": [], "indirect": []}
     for episode in kodi_episode_list:
         if  ('uniqueid' in episode
-            and 'tvmaze' in episode['uniqueid']
-            and episode['uniqueid']['tvmaze']):
+             and 'tvmaze' in episode['uniqueid']
+             and episode['uniqueid']['tvmaze']):
             episodes_for_tvmaze["direct"].append({
                 'episode_id': episode['uniqueid']['tvmaze'],
                 'marked_at': int(time.time()),
@@ -227,7 +227,8 @@ def _pull_watched_episodes(kodi_tv_shows=None):
             if (episode['type'] == StatusType.WATCHED
                     and 'season' in tvmaze_episode_info  # Todo: add support for specials
                     and 'number' in tvmaze_episode_info
-                    and tvmaze_episode_info['number'] is not None): # Todo: Remove when support for specials is added
+                    # Todo: Remove when support for specials is added
+                    and tvmaze_episode_info['number'] is not None):
                 filter_ = {
                     'and': [
                         {
@@ -297,7 +298,8 @@ def _push_all_episodes(kodi_tv_shows):
                 logger.warning('TV show "{}" has no episodes'.format(show['label']))
                 continue
             episodes_for_tvmaze = _prepare_episode_list(episodes)
-            if len(episodes_for_tvmaze['direct']) == 0 and len(episodes_for_tvmaze['indirect']) == 0:
+            if (len(episodes_for_tvmaze['direct']) == 0
+                and len(episodes_for_tvmaze['indirect']) == 0):
                 logger.warning('TV show "{}" has no episodes'.format(show['label']))
                 continue
             try:
@@ -353,12 +355,13 @@ def push_single_episode(episode_id):
             'Unable to determine TVmaze id from show info: {}'.format(pformat(tvshow_info)))
         return
     episodes_for_tvmaze = _prepare_episode_list([episode_info])
-    if len(episodes_for_tvmaze['direct']) == 0 and len(episodes_for_tvmaze['indirect']) == 0:
+    if (len(episodes_for_tvmaze['direct']) == 0
+        and len(episodes_for_tvmaze['indirect']) == 0):
         logger.error('Unable to determine TVmaze id from episode info: {}'.format(pformat(episode_info)))
         return
     try:
         if len(episodes_for_tvmaze['direct']) > 0:
-                    tvmaze.push_episodes_direct(episodes_for_tvmaze['direct'])
+            tvmaze.push_episodes_direct(episodes_for_tvmaze['direct'])
         if len(episodes_for_tvmaze['indirect']) > 0:
             tvmaze.push_episodes(episodes_for_tvmaze['indirect'], tvmaze_id)
     except tvmaze.ApiError as exc:
@@ -398,7 +401,8 @@ def _push_recent_episodes(recent_episodes):
             episode_mapping[id_mapping[episode['tvshowid']]].append(episode)
     for tvmaze_id, episodes in six.iteritems(episode_mapping):
         episodes_for_tvmaze = _prepare_episode_list(episodes)
-        if len(episodes_for_tvmaze['direct']) == 0 and len(episodes_for_tvmaze['indirect']) == 0:
+        if (len(episodes_for_tvmaze['direct']) == 0
+            and len(episodes_for_tvmaze['indirect']) == 0):
             logger.error('Unable to determine TVmaze id from episode info: {}'.format(pformat(episodes)))
             continue
         try:
