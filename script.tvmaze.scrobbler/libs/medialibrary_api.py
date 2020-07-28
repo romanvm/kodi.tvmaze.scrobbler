@@ -95,7 +95,7 @@ def get_episodes(tvshowid, filter_=None):
     """
     params = {
         'tvshowid': tvshowid,
-        'properties': ['season', 'episode', 'playcount', 'tvshowid']
+        'properties': ['season', 'episode', 'uniqueid', 'playcount', 'tvshowid']
     }
     if filter_ is not None:
         params['filter'] = filter_

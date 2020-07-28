@@ -36,6 +36,7 @@ USER_API_URL = 'https://api.tvmaze.com/v1'
 AUTH_START_PATH = '/auth/start'
 AUTH_POLL_PATH = '/auth/poll'
 SCROBBLE_SHOWS_PATH = '/scrobble/shows'
+SCROBBLE_EPISODES_PATH = '/scrobble/episodes'
 SHOW_LOOKUP_PATH = '/lookup/shows'
 
 SESSION = requests.Session()
@@ -204,7 +205,7 @@ def poll_authorization(token):
 def push_episodes(episodes, show_id, provider='tvmaze'):
     # type: (List[Dict[Text, int]], Union[int, Text], Text) -> None
     """
-    Send statuses of episodes to TVmase
+    Send statuses of episodes to TVmaze
 
     :param episodes: the list of episodes to update
     :param show_id: TV show ID in tvmaze, thetvdb or imdb online databases
@@ -217,6 +218,18 @@ def push_episodes(episodes, show_id, provider='tvmaze'):
     except requests.HTTPError as exc:
         raise ApiError(response=exc.response)
 
+def push_episodes_direct(episodes):
+    # type: (List[Dict[Text, int]]) -> None
+    """
+    Send statuses of episodes to TVmaze
+
+    :param episodes: the list of episodes to update
+    """
+
+    try:
+        _call_user_api(SCROBBLE_EPISODES_PATH, 'post', authenticate=True, json=episodes)
+    except requests.HTTPError as exc:
+        raise ApiError(response=exc.response)
 
 def get_show_info_by_external_id(show_id, provider):
     # type: (Text, Text) -> DataType
