@@ -153,8 +153,8 @@ def get_episode_details(episode_id):
     return send_json_rpc(method, params)['episodedetails']
 
 
-def set_episode_playcount(episode_id, playcount=1):
-    # type: (int, int) -> None
+def set_episode_playcount(episode_id, playcount=1, last_played=None):
+    # type: (int, int, Optional[Text]) -> None
     """
     Set episode playcount
 
@@ -165,6 +165,8 @@ def set_episode_playcount(episode_id, playcount=1):
     if playcount != int(bool(original_playcount)):
         method = 'VideoLibrary.SetEpisodeDetails'
         params = {'episodeid': episode_id, 'playcount': playcount}
+        if last_played is not None:
+            params['lastplayed'] = last_played
         send_json_rpc(method, params)
 
 
@@ -177,3 +179,12 @@ def set_show_uniqueid(tvshow_id, external_id, provider='tvmaze'):
         'uniqueid': {provider: str(external_id)},
     }
     send_json_rpc(method, params)
+
+
+def get_kodi_timezone_string():
+    # type: () -> Optional[Text]
+    method = 'Settings.GetSettingValue'
+    params = {'setting': 'locale.timezone'}
+    result = send_json_rpc(method, params)
+    return result.get('value')
+
