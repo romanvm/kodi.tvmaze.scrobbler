@@ -25,7 +25,7 @@ def get_kodi_timezone():
     return None
 
 
-def convert_to_time_string(posix_timestamp):
+def timestamp_to_time_string(posix_timestamp):
     # type: (int) -> Text
     kodi_timezone = get_kodi_timezone()
     date_time = datetime.datetime.fromtimestamp(posix_timestamp, tz=kodi_timezone)
