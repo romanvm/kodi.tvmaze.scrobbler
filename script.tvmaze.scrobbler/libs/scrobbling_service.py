@@ -241,8 +241,6 @@ def _pull_watched_episodes(kodi_tv_shows=None):
                 }
                 try:
                     kodi_episodes = medialib.get_episodes(tvshowid, filter_=filter_)
-                    if not kodi_episodes:
-                        raise medialib.NoDataError
                 except medialib.NoDataError:
                     continue
                 if kodi_episodes:
