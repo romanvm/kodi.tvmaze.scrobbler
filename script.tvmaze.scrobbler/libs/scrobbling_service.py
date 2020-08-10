@@ -198,9 +198,10 @@ def _check_and_set_episode_playcount(kodi_tvshowid, tvmaze_episode):
     # type: (int, Dict[Text, Any]) -> None
     """Check episode watched status and set episode playcount in Kodi accordingly"""
     tvmaze_episode_info = tvmaze_episode['_embedded']['episode']
-    if (tvmaze_episode['type'] == StatusType.WATCHED
-            and 'season' in tvmaze_episode_info  # Todo: add support for specials
-            and 'number' in tvmaze_episode_info):
+    if (episode['type'] == StatusType.WATCHED
+            and tvmaze_episode_info.get('season') is not None
+            and tvmaze_episode_info.get('number') is not None):
+        # Todo: add support for specials
         filter_ = {
             'and': [
                 {
