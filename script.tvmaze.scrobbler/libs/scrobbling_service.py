@@ -146,10 +146,16 @@ def _prepare_episode_list(kodi_episode_list):
     episodes_for_tvmaze = []
     for episode in kodi_episode_list:
         if episode['season']:  # Todo: add support for specials
+            last_played = episode.get('lastplayed')
+            if last_played:
+                timetuple = time.strptime(last_played, '%Y-%m-%d %H:%M:%S')
+                marked_at = int(time.mktime(timetuple))
+            else:
+                marked_at = int(time.time())
             episodes_for_tvmaze.append({
                 'season': episode['season'],
                 'episode': episode['episode'],
-                'marked_at': int(time.time()),
+                'marked_at': marked_at,
                 'type': StatusType.WATCHED if episode['playcount'] else StatusType.ACQUIRED,
             })
     return episodes_for_tvmaze

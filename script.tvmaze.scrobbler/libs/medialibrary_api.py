@@ -147,7 +147,7 @@ def get_episode_details(episode_id):
     method = 'VideoLibrary.GetEpisodeDetails'
     params = {
         'episodeid': episode_id,
-        'properties': ['playcount', 'tvshowid', 'season', 'episode', 'uniqueid']
+        'properties': ['playcount', 'tvshowid', 'season', 'episode', 'uniqueid', 'lastplayed']
     }
     return send_json_rpc(method, params)['episodedetails']
 
