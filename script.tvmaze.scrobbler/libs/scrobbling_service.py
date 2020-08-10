@@ -31,7 +31,7 @@ from kodi_six import xbmc
 
 from . import gui, medialibrary_api as medialib, tvmaze_api as tvmaze, kodi_service as kodi
 from .kodi_service import logger
-from .time_utils import convert_to_time_string
+from .time_utils import timestamp_to_time_string
 
 try:
     # pylint: disable=unused-import
@@ -253,7 +253,7 @@ def _pull_watched_episodes(kodi_tv_shows=None):
                     kodi_episode_info = kodi_episodes[0]
                     marked_at = episode.get('marked_at')
                     if marked_at is not None:
-                        last_played = convert_to_time_string(marked_at)
+                        last_played = timestamp_to_time_string(marked_at)
                     else:
                         last_played = None
                     medialib.set_episode_playcount(kodi_episode_info['episodeid'],
