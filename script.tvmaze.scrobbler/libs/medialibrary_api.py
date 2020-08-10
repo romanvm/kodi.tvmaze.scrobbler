@@ -187,4 +187,3 @@ def get_kodi_timezone_string():
     params = {'setting': 'locale.timezone'}
     result = send_json_rpc(method, params)
     return result.get('value')
-
