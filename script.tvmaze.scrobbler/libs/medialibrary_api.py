@@ -177,11 +177,3 @@ def set_show_uniqueid(tvshow_id, external_id, provider='tvmaze'):
         'uniqueid': {provider: str(external_id)},
     }
     send_json_rpc(method, params)
-
-
-def get_kodi_timezone_string():
-    # type: () -> Optional[Text]
-    method = 'Settings.GetSettingValue'
-    params = {'setting': 'locale.timezone'}
-    result = send_json_rpc(method, params)
-    return result.get('value')

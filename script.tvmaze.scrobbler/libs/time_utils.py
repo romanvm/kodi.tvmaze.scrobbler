@@ -7,7 +7,7 @@ import time
 import pytz
 
 from .kodi_service import logger
-from .medialibrary_api import get_kodi_timezone_string
+from .medialibrary_api import send_json_rpc
 
 try:
     from typing import Text, Optional  # pylint: disable=unused-import
@@ -17,7 +17,7 @@ except ImportError:
 DATETIME_FORMAT = '%Y-%m-%d %H:%M:%S'
 
 
-class proxydt(datetime.datetime):
+class proxydt(datetime.datetime):  # pylint: disable=invalid-name
     """
     A hack to fix Kodi datetime.strptime problem
 
@@ -36,11 +36,14 @@ datetime.datetime = proxydt
 
 def _get_kodi_timezone():
     # type: () -> Optional[pytz.tzinfo.DstTzInfo]
-    kodi_timezone_string = get_kodi_timezone_string()
+    method = 'Settings.GetSettingValue'
+    params = {'setting': 'locale.timezone'}
+    result = send_json_rpc(method, params)
+    kodi_timezone_string = result.get('value')
     try:
         return pytz.timezone(kodi_timezone_string)
     except pytz.UnknownTimeZoneError:
-        logger.error('Unable to determine Kodi timezone from string: "{}"'.format(
+        logger.error('Unable to create a pytz timezone from Kodi timezone: "{}"'.format(
             kodi_timezone_string))
     return None
 
