@@ -17,6 +17,23 @@ except ImportError:
 DATETIME_FORMAT = '%Y-%m-%d %H:%M:%S'
 
 
+class proxydt(datetime.datetime):
+    """
+    A hack to fix Kodi datetime.strptime problem
+
+    More info: https://forum.kodi.tv/showthread.php?tid=112916
+    """
+    def __init__(self, *args, **kwargs):
+        super(proxydt, self).__init__(*args, **kwargs)
+
+    @classmethod
+    def strptime(cls, date_string, format):
+        return datetime.datetime(*(time.strptime(date_string, format)[0:6]))
+
+
+datetime.datetime = proxydt
+
+
 def _get_kodi_timezone():
     # type: () -> Optional[pytz.tzinfo.DstTzInfo]
     kodi_timezone_string = get_kodi_timezone_string()
