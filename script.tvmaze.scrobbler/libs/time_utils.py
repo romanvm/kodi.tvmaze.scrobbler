@@ -23,11 +23,9 @@ class proxydt(datetime.datetime):  # pylint: disable=invalid-name
 
     More info: https://forum.kodi.tv/showthread.php?tid=112916
     """
-    def __init__(self, *args, **kwargs):
-        super(proxydt, self).__init__(*args, **kwargs)
 
     @classmethod
-    def strptime(cls, date_string, format):
+    def strptime(cls, date_string, format):  # pylint: disable=redefined-builtin
         return datetime.datetime(*(time.strptime(date_string, format)[0:6]))
 
 
