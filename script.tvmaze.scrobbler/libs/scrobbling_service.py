@@ -31,7 +31,7 @@ from kodi_six import xbmc
 
 from . import gui, medialibrary_api as medialib, tvmaze_api as tvmaze, kodi_service as kodi
 from .kodi_service import logger
-from .time_utils import timestamp_to_time_string
+from .time_utils import timestamp_to_time_string, time_string_to_timestamp
 
 try:
     # pylint: disable=unused-import
@@ -149,8 +149,7 @@ def _prepare_episode_list(kodi_episode_list):
         if episode['season']:  # Todo: add support for specials
             marked_at_sting = episode.get('lastplayed') or episode.get('dateadded')
             if marked_at_sting:
-                timetuple = time.strptime(marked_at_sting, '%Y-%m-%d %H:%M:%S')
-                marked_at = int(time.mktime(timetuple))
+                marked_at = time_string_to_timestamp(marked_at_sting)
             else:
                 marked_at = int(time.time())
             episodes_for_tvmaze.append({

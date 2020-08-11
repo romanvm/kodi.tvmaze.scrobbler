@@ -2,6 +2,7 @@
 from __future__ import absolute_import, unicode_literals
 
 import datetime
+import time
 
 import pytz
 
@@ -13,8 +14,10 @@ try:
 except ImportError:
     pass
 
+DATETIME_FORMAT = '%Y-%m-%d %H:%M:%S'
 
-def get_kodi_timezone():
+
+def _get_kodi_timezone():
     # type: () -> Optional[pytz.tzinfo.DstTzInfo]
     kodi_timezone_string = get_kodi_timezone_string()
     try:
@@ -27,6 +30,16 @@ def get_kodi_timezone():
 
 def timestamp_to_time_string(posix_timestamp):
     # type: (int) -> Text
-    kodi_timezone = get_kodi_timezone()
+    kodi_timezone = _get_kodi_timezone()
     date_time = datetime.datetime.fromtimestamp(posix_timestamp, tz=kodi_timezone)
-    return date_time.strftime('%Y-%m-%d %H:%M:%S')
+    return date_time.strftime(DATETIME_FORMAT)
+
+
+def time_string_to_timestamp(time_string):
+    # type: (Text) -> int
+    time_object = datetime.datetime.strptime(time_string, DATETIME_FORMAT)
+    kodi_timezone = _get_kodi_timezone()
+    if kodi_timezone is not None:
+        time_object = kodi_timezone.localize(time_object)
+    timetuple = time_object.timetuple()
+    return int(time.mktime(timetuple))
