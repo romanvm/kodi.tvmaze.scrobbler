@@ -95,7 +95,8 @@ def get_episodes(tvshowid, filter_=None):
     """
     params = {
         'tvshowid': tvshowid,
-        'properties': ['season', 'episode', 'playcount', 'tvshowid']
+        'properties': ['season', 'episode', 'playcount', 'tvshowid',
+                       'dateadded', 'lastplayed']
     }
     if filter_ is not None:
         params['filter'] = filter_
@@ -113,7 +114,10 @@ def get_recent_episodes():
     :return: the list of recent episodes
     :raises NoDataError: if the Kodi library has no recent episodes
     """
-    params = {'properties': ['playcount', 'tvshowid', 'season', 'episode', 'uniqueid']}
+    params = {
+        'properties': ['playcount', 'tvshowid', 'season', 'episode', 'uniqueid',
+                       'dateadded', 'lastplayed']
+    }
     result = send_json_rpc('VideoLibrary.GetRecentlyAddedEpisodes', params)
     if not result.get('episodes'):
         raise NoDataError
@@ -155,12 +159,6 @@ def get_episode_details(episode_id):
 
 def set_episode_playcount(episode_id, playcount=1, last_played=None):
     # type: (int, int, Optional[Text]) -> None
-    """
-    Set episode playcount
-
-    :param episode_id:
-    :param playcount: 1 or 0
-    """
     original_playcount = get_episode_details(episode_id)['playcount']
     if playcount != int(bool(original_playcount)):
         method = 'VideoLibrary.SetEpisodeDetails'
