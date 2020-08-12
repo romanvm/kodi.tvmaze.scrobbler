@@ -117,10 +117,10 @@ def _send_request(url, method='get', **requests_kwargs):
     return response
 
 
-def _call_api(path, method='get', **requests_kwargs):
+def _call_common_api(path, method='get', **requests_kwargs):
     # type: (Text, Text, **Optional[Union[tuple, dict, list]]) -> requests.Response
     """
-    Call TVmaze API
+    Call common TVmaze API
 
     :param path: API path
     :param method: HTTP method
@@ -230,7 +230,7 @@ def get_show_info_by_external_id(show_id, provider):
     """
     params = {provider: show_id}
     try:
-        response = _call_api(SHOW_LOOKUP_PATH, 'get', params=params)
+        response = _call_common_api(SHOW_LOOKUP_PATH, 'get', params=params)
     except requests.HTTPError as exc:
         raise ApiError(response=exc.response)
     return response.json()
