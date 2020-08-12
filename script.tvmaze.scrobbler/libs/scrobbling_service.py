@@ -314,7 +314,7 @@ def _push_all_episodes(kodi_tv_shows):
     else:
         gui.DIALOG.notification(kodi.ADDON_NAME,
                                 _('Sync completed with errors. Check the log for more info.'),
-                                icon='error')
+                                icon='warning')
 
 
 def sync_all_episodes():
