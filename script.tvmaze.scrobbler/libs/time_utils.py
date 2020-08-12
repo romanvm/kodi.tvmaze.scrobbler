@@ -15,6 +15,7 @@ except ImportError:
     pass
 
 DATETIME_FORMAT = '%Y-%m-%d %H:%M:%S'
+TIMEZONE = None
 
 
 class proxydt(datetime.datetime):  # pylint: disable=invalid-name
@@ -34,16 +35,18 @@ datetime.datetime = proxydt
 
 def _get_kodi_timezone():
     # type: () -> Optional[pytz.tzinfo.DstTzInfo]
-    method = 'Settings.GetSettingValue'
-    params = {'setting': 'locale.timezone'}
-    result = send_json_rpc(method, params)
-    kodi_timezone_string = result.get('value')
-    try:
-        return pytz.timezone(kodi_timezone_string)
-    except pytz.UnknownTimeZoneError:
-        logger.error('Unable to create a pytz timezone from Kodi timezone: "{}"'.format(
-            kodi_timezone_string))
-    return None
+    global TIMEZONE
+    if TIMEZONE is None:
+        method = 'Settings.GetSettingValue'
+        params = {'setting': 'locale.timezone'}
+        result = send_json_rpc(method, params)
+        kodi_timezone = result.get('value')
+        try:
+            TIMEZONE = pytz.timezone(kodi_timezone)
+        except pytz.UnknownTimeZoneError:
+            logger.error('Unable to create a pytz timezone from Kodi timezone: "{}"'.format(
+                kodi_timezone))
+    return TIMEZONE
 
 
 def timestamp_to_time_string(posix_timestamp):
