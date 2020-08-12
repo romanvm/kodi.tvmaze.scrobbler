@@ -54,11 +54,16 @@ class ApiError(Exception):
         # type: (requests.Response) -> Text
         if 'application/json' in response.headers.get('Content-Type', ''):
             payload = response.json()
-            name = payload.get('name', '')
-            message = payload.get('message', '')
-            if name and message:
-                return '{}: {}'.format(name, message)
-            return message or name
+            if isinstance(payload, dict):
+                name = payload.get('name', '')
+                message = payload.get('message', '')
+                if name and message:
+                    return '{}: {}'.format(name, message)
+                return message or name
+            elif response.status_code == 207 and isinstance(payload, list):
+                failed_episodes = [item for item in payload if item['code'] != 200]
+                # Todo: collect detailed info about failed episodes
+                return 'Failed to update {} episodes'.format(len(failed_episodes))
         return response.text
 
     def __init__(self, message='', response=None):
