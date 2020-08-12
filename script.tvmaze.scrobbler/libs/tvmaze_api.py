@@ -60,7 +60,7 @@ class ApiError(Exception):
                 if name and message:
                     return '{}: {}'.format(name, message)
                 return message or name
-            elif response.status_code == 207 and isinstance(payload, list):
+            if response.status_code == 207 and isinstance(payload, list):
                 failed_episodes = [item for item in payload if item['code'] != 200]
                 # Todo: collect detailed info about failed episodes
                 return 'Failed to update {} episodes'.format(len(failed_episodes))

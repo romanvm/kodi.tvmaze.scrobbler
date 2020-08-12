@@ -35,7 +35,7 @@ datetime.datetime = proxydt
 
 def _get_kodi_timezone():
     # type: () -> Optional[pytz.tzinfo.DstTzInfo]
-    global TIMEZONE
+    global TIMEZONE  # pylint: disable=global-statement
     if TIMEZONE is None:
         method = 'Settings.GetSettingValue'
         params = {'setting': 'locale.timezone'}
