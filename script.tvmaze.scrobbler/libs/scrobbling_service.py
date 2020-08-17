@@ -194,6 +194,49 @@ def _get_tv_shows_from_kodi():
         return None
 
 
+def _check_and_set_episode_playcount(kodi_tvshowid, tvmaze_episode):
+    # type: (int, Dict[Text, Any]) -> None
+    """Check episode watched status and set episode playcount in Kodi accordingly"""
+    tvmaze_episode_info = tvmaze_episode['_embedded']['episode']
+    if (tvmaze_episode['type'] == StatusType.WATCHED
+            and 'season' in tvmaze_episode_info  # Todo: add support for specials
+            and 'number' in tvmaze_episode_info):
+        filter_ = {
+            'and': [
+                {
+                    'field': 'season',
+                    'operator': 'is',
+                    'value': str(tvmaze_episode_info['season']),
+                },
+                {
+                    'field': 'episode',
+                    'operator': 'is',
+                    'value': str(tvmaze_episode_info['number']),
+                },
+                {
+                    'field': 'playcount',
+                    'operator': 'is',
+                    'value': '0',
+                },
+            ]
+        }
+        try:
+            kodi_episodes = medialib.get_episodes(kodi_tvshowid, filter_=filter_)
+        except medialib.NoDataError:
+            return
+        if kodi_episodes:
+            kodi_episode_info = kodi_episodes[0]
+            marked_at = tvmaze_episode.get('marked_at')
+            if marked_at is not None:
+                last_played = timestamp_to_time_string(marked_at)
+            else:
+                last_played = None
+            with PulledEpisodesDb() as database:
+                database.upsert_episode(kodi_episode_info['episodeid'])
+            medialib.set_episode_playcount(kodi_episode_info['episodeid'],
+                                           last_played=last_played)
+
+
 def _pull_watched_episodes(kodi_tv_shows=None):
     # type: (Optional[List[Dict[Text, Any]]]) -> None
     """Pull watched episodes from TVmaze and set them as watched in Kodi"""
@@ -224,50 +267,13 @@ def _pull_watched_episodes(kodi_tv_shows=None):
                 tvmaze_id, pformat(tvmaze_episodes)))
             tvmaze_shows[show['tvshowid']] = tvmaze_episodes
         shows_count = len(tvmaze_shows)
-        for n, (tvshowid, episodes) in enumerate(six.iteritems(tvmaze_shows), 1):
+        for n, (tvshowid, tvmaze_episodes) in enumerate(six.iteritems(tvmaze_shows), 1):
             percent = int(100 * n / shows_count)
             dialog.update(percent,
                           _('TVmaze Scrobbler'),
                           _('Updating TV shows in Kodi: {} of {}').format(n, shows_count))
-            for episode in episodes:
-                tvmaze_episode_info = episode['_embedded']['episode']
-                if (episode['type'] == StatusType.WATCHED
-                        and 'season' in tvmaze_episode_info  # Todo: add support for specials
-                        and 'number' in tvmaze_episode_info):
-                    filter_ = {
-                        'and': [
-                            {
-                                'field': 'season',
-                                'operator': 'is',
-                                'value': str(tvmaze_episode_info['season']),
-                            },
-                            {
-                                'field': 'episode',
-                                'operator': 'is',
-                                'value': str(tvmaze_episode_info['number']),
-                            },
-                            {
-                                'field': 'playcount',
-                                'operator': 'is',
-                                'value': '0',
-                            },
-                        ]
-                    }
-                    try:
-                        kodi_episodes = medialib.get_episodes(tvshowid, filter_=filter_)
-                    except medialib.NoDataError:
-                        continue
-                    if kodi_episodes:
-                        kodi_episode_info = kodi_episodes[0]
-                        marked_at = episode.get('marked_at')
-                        if marked_at is not None:
-                            last_played = timestamp_to_time_string(marked_at)
-                        else:
-                            last_played = None
-                        with PulledEpisodesDb() as database:
-                            database.upsert_episode(kodi_episode_info['episodeid'])
-                        medialib.set_episode_playcount(kodi_episode_info['episodeid'],
-                                                       last_played=last_played)
+            for episode in tvmaze_episodes:
+                _check_and_set_episode_playcount(tvshowid, episode)
 
 
 def pull_watched_episodes():
