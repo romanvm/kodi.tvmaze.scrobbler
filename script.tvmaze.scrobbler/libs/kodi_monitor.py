@@ -22,6 +22,7 @@ import json
 
 import xbmc
 
+from .pulled_episodes_db import PulledEpisodesDb
 from . import scrobbling_service as scrobbler
 from .kodi_service import logger
 
@@ -44,8 +45,11 @@ class UpdateMonitor(xbmc.Monitor):  # pylint: disable=missing-docstring
         if method == 'VideoLibrary.OnUpdate' and 'playcount' in data:
             item = json.loads(data)['item']
             if item.get('type') == 'episode':
-                logger.debug('Updating episode details: {}'.format(data))
-                scrobbler.push_single_episode(item['id'])
+                with PulledEpisodesDb() as database:
+                    is_pulled = database.is_pulled(item['id'])
+                if not is_pulled:
+                    logger.debug('Updating episode details: {}'.format(data))
+                    scrobbler.push_single_episode(item['id'])
 
     def onScanFinished(self, library):
         # type: (Text) -> None

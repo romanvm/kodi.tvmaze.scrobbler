@@ -130,3 +130,7 @@ msgstr ""
 msgctxt "#32030"
 msgid "Medialibrary has no TV episodes"
 msgstr ""
+
+msgctxt "#32031"
+msgid "Updating TV shows in Kodi: {} of {}"
+msgstr ""
