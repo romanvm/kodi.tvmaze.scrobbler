@@ -232,9 +232,8 @@ def _pull_watched_episodes(kodi_tv_shows=None):
             for episode in episodes:
                 tvmaze_episode_info = episode['_embedded']['episode']
                 if (episode['type'] == StatusType.WATCHED
-                        and tvmaze_episode_info.get('season') is not None
-                        and tvmaze_episode_info.get('number') is not None):
-                    # Todo: add support for specials
+                        and 'season' in tvmaze_episode_info  # Todo: add support for specials
+                        and 'number' in tvmaze_episode_info):
                     filter_ = {
                         'and': [
                             {
