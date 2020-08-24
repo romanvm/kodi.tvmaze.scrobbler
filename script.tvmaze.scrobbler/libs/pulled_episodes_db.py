@@ -69,6 +69,4 @@ class PulledEpisodesDb(object):
             WHERE episode_id = ? AND STRFTIME('%s', 'now') - timestamp < 10
         """, [episode_id])
         row = self._cursor.fetchone()
-        if row and row[0]:
-            return True
-        return False
+        return bool(row)
