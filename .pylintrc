@@ -61,6 +61,8 @@ disable=no-member,
         no-self-use,
         invalid-name,
         unused-argument,
+        super-with-arguments,
+        raise-missing-from,
         fixme
 
 # Enable the message, report, category or checker with the given id(s). You can
