@@ -10,7 +10,7 @@
     <import addon="script.module.six" />
     <import addon="script.module.kodi-six" />
     <import addon="script.module.pyqrcode" />
-    <import addon="script.module.pytz" />
+    <import addon="script.module.dateutil" />
 <!--    <import addon="script.module.web-pdb" />-->
   </requires>
   <extension point="xbmc.python.script" library="script.py">
