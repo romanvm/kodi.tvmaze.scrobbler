@@ -55,12 +55,23 @@ class PulledEpisodesDb(object):
 
     def upsert_episode(self, episode_id):
         self._cursor.execute("""
-            INSERT INTO pulled_episodes
-            (episode_id, timestamp)
-            VALUES (?, STRFTIME('%s', 'now'))
-            ON CONFLICT (episode_id)
-            DO UPDATE SET timestamp = STRFTIME('%s', 'now')
+            SELECT 1
+            FROM pulled_episodes
+            WHERE episode_id = ?
         """, [episode_id])
+        row = self._cursor.fetchone()
+        if not row:
+            self._cursor.execute("""
+                INSERT INTO pulled_episodes
+                (episode_id, timestamp)
+                VALUES (?, STRFTIME('%s', 'now'))
+            """, [episode_id])
+        else:
+            self._cursor.execute("""
+                UPDATE pulled_episodes
+                SET timestamp = STRFTIME('%s', 'now')
+                WHERE episode_id = ?
+            """, [episode_id])
 
     def is_pulled(self, episode_id):
         self._cursor.execute("""
