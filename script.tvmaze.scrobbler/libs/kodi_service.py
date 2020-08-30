@@ -29,7 +29,7 @@ from pprint import pformat
 
 import six
 from six.moves import cPickle as pickle
-from kodi_six import xbmc, xbmcgui
+from kodi_six import xbmc
 from kodi_six.xbmcaddon import Addon
 
 try:
@@ -45,8 +45,6 @@ ADDON_VERSION = ADDON.getAddonInfo('version')
 ADDON_PROFILE_DIR = xbmc.translatePath(ADDON.getAddonInfo('profile'))
 ADDON_DIR = xbmc.translatePath(ADDON.getAddonInfo('path'))
 ADDON_ICON = xbmc.translatePath(ADDON.getAddonInfo('icon'))
-
-_WINDOW = xbmcgui.Window(10000)
 
 if not os.path.exists(ADDON_PROFILE_DIR):
     os.mkdir(ADDON_PROFILE_DIR)
