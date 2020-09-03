@@ -40,4 +40,5 @@ def time_string_to_timestamp(time_string):
     time_object = datetime.datetime.strptime(time_string, DATETIME_FORMAT)
     time_object = time_object.replace(tzinfo=tz.tzlocal())
     timetuple = time_object.timetuple()
-    return int(time.mktime(timetuple))
+    timestamp = int(time.mktime(timetuple))
+    return timestamp if timestamp >= 0 else 0
