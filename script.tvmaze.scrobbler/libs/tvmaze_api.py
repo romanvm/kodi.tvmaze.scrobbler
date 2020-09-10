@@ -52,7 +52,7 @@ class ApiError(Exception):
     @staticmethod
     def extract_error_message_from_response(response):
         # type: (requests.Response) -> Text
-        if 'application/json' in response.headers.get('Content-Type', ''):
+        if 'application/json' in response.headers.get('Content-Type', '') and response.content:
             payload = response.json()
             if isinstance(payload, dict):
                 name = payload.get('name', '')
@@ -118,7 +118,8 @@ def _send_request(url, method='get', **requests_kwargs):
     response = method_func(url, auth=auth, **requests_kwargs)
     if not response.ok:
         logger.error('TVmaze returned error {}'.format(response.status_code))
-    logger.debug('API response:\n{}'.format(pformat(response.json())))
+    if 'application/json' in response.headers.get('Content-Type', '') and response.content:
+        logger.debug('API response:\n{}'.format(pformat(response.json())))
     return response
 
 
@@ -165,7 +166,8 @@ def _call_user_api(path, method='get', authenticate=False, **requests_kwargs):
         response.raise_for_status()
     elif response.status_code == 207:
         raise requests.HTTPError('Update completed with errors', response=response)
-    logger.debug('API response:\n{}'.format(pformat(response.json())))
+    if 'application/json' in response.headers.get('Content-Type', '') and response.content:
+        logger.debug('API response:\n{}'.format(pformat(response.json())))
     return response
 
 
