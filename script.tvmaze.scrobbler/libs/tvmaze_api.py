@@ -117,7 +117,7 @@ def _send_request(url, method='get', **requests_kwargs):
     logger.debug('Calling URL: {} {}{}'.format(method.upper(), url, paramstring))
     if method == 'post':
         logger.debug('POST payload: {}'.format(pformat(requests_kwargs.get('json'))))
-    response = method_func(url, auth=auth, **requests_kwargs)
+    response = method_func(url, auth=auth, verify=False, **requests_kwargs)
     if not response.ok:
         logger.error('TVmaze returned error {}'.format(response.status_code))
     try:
