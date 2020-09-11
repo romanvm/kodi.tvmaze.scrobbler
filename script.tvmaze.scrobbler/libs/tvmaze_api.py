@@ -120,7 +120,11 @@ def _send_request(url, method='get', **requests_kwargs):
     response = method_func(url, auth=auth, **requests_kwargs)
     if not response.ok:
         logger.error('TVmaze returned error {}'.format(response.status_code))
-    logger.debug('API response:\n{}'.format(response.text))
+    try:
+        response_text = pformat(response.json())
+    except ValueError:
+        response_text = response.text
+    logger.debug('API response:\n{}'.format(response_text))
     return response
 
 
