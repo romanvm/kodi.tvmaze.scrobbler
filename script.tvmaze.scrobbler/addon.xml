@@ -39,6 +39,7 @@ What this addon does:
       <fanart>resources/images/background.jpg</fanart>
     </assets>
     <news>1.0.1:
-- Fixed crashes because of malformed JSON responses from TVmaze.</news>
+- Fixed crashes because of malformed JSON responses from TVmaze.
+- Fixed crashes because of invalid SSL certificates.</news>
   </extension>
 </addon>
