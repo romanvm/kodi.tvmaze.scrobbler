@@ -22,6 +22,7 @@ from __future__ import absolute_import, unicode_literals
 from pprint import pformat
 
 import requests
+from six.moves import urllib_parse
 
 from .kodi_service import logger, ADDON
 
@@ -111,15 +112,15 @@ def _send_request(url, method='get', **requests_kwargs):
     """
     method_func = getattr(SESSION, method, SESSION.get)
     auth = requests_kwargs.pop('auth', None)  # Remove credentials before logging
-    logger.debug(
-        'Calling URL "{}"... method: {}, parameters:\n{}'.format(
-            url, method, pformat(requests_kwargs))
-    )
+    params = requests_kwargs.get('params')
+    paramstring = '?{}'.format(urllib_parse.urlencode(params)) if params else ''
+    logger.debug('Calling URL: {} {}{}'.format(method.upper(), url, paramstring))
+    if method == 'post':
+        logger.debug('POST payload: {}'.format(pformat(requests_kwargs.get('json'))))
     response = method_func(url, auth=auth, **requests_kwargs)
     if not response.ok:
         logger.error('TVmaze returned error {}'.format(response.status_code))
-    if 'application/json' in response.headers.get('Content-Type', '') and response.content:
-        logger.debug('API response:\n{}'.format(pformat(response.json())))
+    logger.debug('API response:\n{}'.format(response.text))
     return response
 
 
@@ -166,8 +167,6 @@ def _call_user_api(path, method='get', authenticate=False, **requests_kwargs):
         response.raise_for_status()
     elif response.status_code == 207:
         raise requests.HTTPError('Update completed with errors', response=response)
-    if 'application/json' in response.headers.get('Content-Type', '') and response.content:
-        logger.debug('API response:\n{}'.format(pformat(response.json())))
     return response
 
 
