@@ -18,10 +18,12 @@
 
 from __future__ import absolute_import, unicode_literals
 
+from libs.exception_logger import log_exception
 from libs.kodi_monitor import UpdateMonitor
 from libs.kodi_service import logger
 
-MONITOR = UpdateMonitor()
-logger.info('Service started')
-MONITOR.waitForAbort()
-logger.info('Service stopped')
+with log_exception():
+    MONITOR = UpdateMonitor()
+    logger.info('Service started')
+    MONITOR.waitForAbort()
+    logger.info('Service stopped')
