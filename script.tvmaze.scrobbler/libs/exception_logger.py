@@ -18,6 +18,7 @@
 import inspect
 import sys
 from contextlib import contextmanager
+from inspect import FrameInfo  # pylint: disable=unused-import
 from platform import uname
 from pprint import pformat
 
@@ -27,7 +28,7 @@ from kodi_six import xbmc
 from .kodi_service import logger
 
 try:
-    from typing import Text, Dict, Callable, Generator  # pylint: disable=unused-import
+    from typing import Text, Dict, List, Callable, Generator  # pylint: disable=unused-import
 except ImportError:
     pass
 
@@ -49,12 +50,12 @@ def _format_vars(variables):
     return '\n'.join(lines)
 
 
-def _format_code_context(frame_info):
-    # type: (tuple) -> Text
+def _format_code_context(code_context, lineno, index):
+    # type: (List[Text], int, int) -> Text
     context = ''
-    if frame_info[4] is not None:
-        for i, line in enumerate(frame_info[4], frame_info[2] - frame_info[5]):
-            if i == frame_info[2]:
+    if code_context is not None:
+        for i, line in enumerate(code_context, lineno - index):
+            if i == lineno:
                 context += '{}:>{}'.format(six.text_type(i).rjust(5), line)
             else:
                 context += '{}: {}'.format(six.text_type(i).rjust(5), line)
@@ -74,12 +75,13 @@ Local variables:
 
 
 def _format_frame_info(frame_info):
-    # type: (tuple) -> Text
+    # type: (FrameInfo) -> Text
     return FRAME_INFO_TEMPLATE.format(
-        file_path=frame_info[1],
-        lineno=frame_info[2],
-        code_context=_format_code_context(frame_info),
-        local_vars=_format_vars(frame_info[0].f_locals)
+        file_path=frame_info.filename,
+        lineno=frame_info.lineno,
+        code_context=_format_code_context(frame_info.code_context, frame_info.lineno,
+                                          frame_info.index),
+        local_vars=_format_vars(frame_info.frame.f_locals)
     )
 
 
