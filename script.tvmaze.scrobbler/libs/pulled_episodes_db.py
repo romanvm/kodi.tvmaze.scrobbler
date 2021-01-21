@@ -32,6 +32,26 @@ except ImportError:
     pass
 
 
+class DbTable(object):
+    DB = os.path.join(ADDON_PROFILE_DIR, 'tvmaze.sqlite')
+
+    def __init__(self):
+        self._connection = sqlite3.connect(self.DB)
+        self._cursor = None  # type: Optional[sqlite3.Cursor]
+        self._create_table()
+
+    def _create_table(self):
+        raise NotImplementedError
+
+    def __enter__(self):
+        self._cursor = self._connection.cursor()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self._connection.commit()
+        self._connection.close()
+
+
 class PulledEpisodesDb(object):
     DB = os.path.join(ADDON_PROFILE_DIR, 'pulled-episodes.sqlite')
 
