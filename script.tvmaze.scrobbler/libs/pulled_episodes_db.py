@@ -15,7 +15,9 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 # pylint: disable=missing-docstring
 """
-The scrobbler database API
+The database of pulled episodes
+
+It is used to prevent extra push of a watched episode which has just been pulled from TVmaze.
 """
 from __future__ import absolute_import, unicode_literals
 
@@ -25,21 +27,23 @@ import sqlite3
 from .kodi_service import ADDON_PROFILE_DIR
 
 try:
-    from typing import Optional, Text  # pylint: disable=unused-import
+    from typing import Optional  # pylint: disable=unused-import
 except ImportError:
     pass
 
 
-class DbTable(object):
-    DB = os.path.join(ADDON_PROFILE_DIR, 'tvmaze.sqlite')
+class PulledEpisodesDb(object):
+    DB = os.path.join(ADDON_PROFILE_DIR, 'pulled-episodes.sqlite')
 
     def __init__(self):
         self._connection = sqlite3.connect(self.DB)
         self._cursor = None  # type: Optional[sqlite3.Cursor]
-        self._create_table()
-
-    def _create_table(self):
-        raise NotImplementedError
+        self._connection.execute("""
+            CREATE TABLE IF NOT EXISTS pulled_episodes(
+                episode_id INTEGER PRIMARY KEY,
+                timestamp INTEGER NOT NULL
+            )
+        """)
 
     def __enter__(self):
         self._cursor = self._connection.cursor()
@@ -49,24 +53,7 @@ class DbTable(object):
         self._connection.commit()
         self._connection.close()
 
-
-class PulledEpisodesTable(DbTable):
-    """
-    The table of pulled episodes
-
-    It is used to prevent extra push of a watched episode which has just been pulled from TVmaze.
-    """
-
-    def _create_table(self):
-        self._connection.execute("""
-            CREATE TABLE IF NOT EXISTS pulled_episodes(
-                episode_id INTEGER PRIMARY KEY,
-                timestamp INTEGER NOT NULL
-            )
-        """)
-
     def upsert_episode(self, episode_id):
-        # type: (int) -> None
         self._cursor.execute("""
             SELECT 1
             FROM pulled_episodes
@@ -87,7 +74,6 @@ class PulledEpisodesTable(DbTable):
             """, [episode_id])
 
     def is_pulled(self, episode_id):
-        # type: (int) -> bool
         self._cursor.execute("""
             SELECT 1
             FROM pulled_episodes
@@ -95,45 +81,3 @@ class PulledEpisodesTable(DbTable):
         """, [episode_id])
         row = self._cursor.fetchone()
         return bool(row)
-
-
-class TimeLastUpdatedTable(DbTable):
-
-    def _create_table(self):
-        self._connection.execute("""
-            CREATE TABLE IF NOT EXISTS time_last_updated(
-                last_updated TEXT NOT NULL
-            )
-        """)
-
-    def upsert_time_updated(self, time_string):
-        # type: (Text) -> None
-        self._cursor.execute("""
-            SELECT last_upated
-            FROM time_last_updated
-            LIMIT 1
-        """)
-        row = self._cursor.fetchone()
-        if not row:
-            self._cursor.execute("""
-                INSERT INTO time_last_updated
-                (last_updated)
-                VALUES (?)
-            """, [time_string])
-        else:
-            self._cursor.execute("""
-                UPDATE time_last_updated
-                SET last_upated = ?
-            """, [time_string])
-
-    def get_time_updated(self):
-        # type: () -> Optional[Text]
-        self._cursor.execute("""
-            SELECT last_upated
-            FROM time_last_updated
-            LIMIT 1
-        """)
-        row = self._cursor.fetchone()
-        if row:
-            return row[0]
-        return None

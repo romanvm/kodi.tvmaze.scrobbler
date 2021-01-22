@@ -22,7 +22,7 @@ import json
 
 import xbmc
 
-from .database import PulledEpisodesTable
+from .pulled_episodes_db import PulledEpisodesDb
 from . import scrobbling_service as scrobbler
 from .kodi_service import logger
 
@@ -32,7 +32,7 @@ except ImportError:
     pass
 
 
-class UpdateMonitor(xbmc.Monitor):  # pylint: disable=missing-docstring
+class KodiMonitor(xbmc.Monitor):  # pylint: disable=missing-docstring
 
     def onNotification(self, sender, method, data):
         # type: (Text, Text, Text) -> None
@@ -45,7 +45,7 @@ class UpdateMonitor(xbmc.Monitor):  # pylint: disable=missing-docstring
         if method == 'VideoLibrary.OnUpdate' and 'playcount' in data:
             item = json.loads(data)['item']
             if item.get('type') == 'episode':
-                with PulledEpisodesTable() as database:
+                with PulledEpisodesDb() as database:
                     is_pulled = database.is_pulled(item['id'])
                 if not is_pulled:
                     logger.debug('Updating episode details: {}'.format(data))

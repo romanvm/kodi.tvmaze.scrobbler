@@ -31,7 +31,7 @@ from kodi_six import xbmc
 
 from . import gui, medialibrary_api as medialib, tvmaze_api as tvmaze, kodi_service as kodi
 from .kodi_service import logger
-from .database import PulledEpisodesTable
+from .pulled_episodes_db import PulledEpisodesDb
 from .time_utils import timestamp_to_time_string, time_string_to_timestamp
 
 try:
@@ -232,7 +232,7 @@ def _check_and_set_episode_playcount(kodi_tvshowid, tvmaze_episode):
                 last_played = timestamp_to_time_string(marked_at)
             else:
                 last_played = None
-            with PulledEpisodesTable() as database:
+            with PulledEpisodesDb() as database:
                 database.upsert_episode(kodi_episode_info['episodeid'])
             medialib.set_episode_playcount(kodi_episode_info['episodeid'],
                                            last_played=last_played)
