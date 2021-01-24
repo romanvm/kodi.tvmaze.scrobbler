@@ -19,7 +19,9 @@ jobs:
         pip install -q -r requirements.txt
     - name: Check with Pylint
       run: |
-        make lint
+        pylint script.tvmaze.scrobbler/libs \
+          script.tvmaze.scrobbler/script.py \
+          script.tvmaze.scrobbler/service.py
     - name: Install addon checker
       run: |
         pip install -q kodi-addon-checker
