@@ -31,5 +31,5 @@ with log_exception():
     logger.info('Service started')
     while not monitor.abortRequested():
         periodic_pull()
-        xbmc.sleep(10000)
+        xbmc.sleep(60000)
     logger.info('Service stopped')

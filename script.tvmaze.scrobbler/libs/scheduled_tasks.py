@@ -38,12 +38,16 @@ def _should_pull():
 def periodic_pull():
     if _should_pull():
         now = datetime.now()
-        pull_interval_hours = ADDON.getSettingInt('pull_interval_hours')
+        pull_interval_hours_str = ADDON.getSettingString('pull_interval_hours')
+        if not pull_interval_hours_str:
+            logger.error('Pulling interval is not set')
+            return
+        pull_interval_hours = int(pull_interval_hours_str)
         time_last_pulled_str = ADDON.getSettingString('time_last_pulled')
         time_last_pulled = (datetime.strptime(time_last_pulled_str, TIME_FORMAT)
                             if time_last_pulled_str else None)
         if (time_last_pulled is None
                 or now - timedelta(hours=pull_interval_hours) > time_last_pulled):
             pull_watched_episodes()
-            ADDON.setSettingString('time_last_updated', now.strftime(TIME_FORMAT))
+            ADDON.setSettingString('time_last_pulled', now.strftime(TIME_FORMAT))
             logger.info('Pulled watched episodes from TVmaze')
