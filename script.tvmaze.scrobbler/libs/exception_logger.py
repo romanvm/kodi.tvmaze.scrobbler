@@ -19,7 +19,6 @@ from __future__ import absolute_import, unicode_literals
 import inspect
 import sys
 from contextlib import contextmanager
-from inspect import FrameInfo  # pylint: disable=unused-import
 from platform import uname
 from pprint import pformat
 
@@ -76,13 +75,13 @@ Local variables:
 
 
 def _format_frame_info(frame_info):
-    # type: (FrameInfo) -> Text
+    # type: (tuple) -> Text
     return FRAME_INFO_TEMPLATE.format(
-        file_path=frame_info.filename,
-        lineno=frame_info.lineno,
-        code_context=_format_code_context(frame_info.code_context, frame_info.lineno,
-                                          frame_info.index),
-        local_vars=_format_vars(frame_info.frame.f_locals)
+        file_path=frame_info[1],
+        lineno=frame_info[2],
+        code_context=_format_code_context(frame_info[4], frame_info[2],
+                                          frame_info[5]),
+        local_vars=_format_vars(frame_info[0].f_locals)
     )
 
 
