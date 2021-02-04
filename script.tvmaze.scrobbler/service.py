@@ -18,18 +18,13 @@
 
 from __future__ import absolute_import, unicode_literals
 
-import xbmc
-
 from libs.exception_logger import log_exception
 from libs.kodi_monitor import KodiMonitor
 from libs.kodi_service import logger
 from libs.scheduled_tasks import periodic_pull
 
 with log_exception():
-    xbmc.sleep(3000)
     monitor = KodiMonitor()
-    logger.info('Service started')
-    while not monitor.abortRequested():
+    while not monitor.waitForAbort(3.0):
         periodic_pull()
-        xbmc.sleep(60000)
     logger.info('Service stopped')
