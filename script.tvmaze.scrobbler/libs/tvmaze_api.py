@@ -235,7 +235,7 @@ def push_episodes_by_id(episodes):
     # type(List[Dict[Text, int]) -> None
     """
     Send statuses of episodes to TVmaze using TVmaze episode IDs
-    
+
     :param episodes: the list of episodes to update
     :raises TvMazeApiError: on any API error
     """
