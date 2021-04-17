@@ -39,7 +39,7 @@ What this addon does:
       <fanart>resources/images/background.jpg</fanart>
     </assets>
     <news>1.2.0:
-- Added a setting to enable/disable episodes sync on medialibrary update.
+- Added a setting to enable/disable episodes sync on medialibrary update (disabled by default).
 
 1.1.1:
 - Fixed special episodes handling.</news>
