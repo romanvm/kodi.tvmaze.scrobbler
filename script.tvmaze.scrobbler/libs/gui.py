@@ -103,7 +103,7 @@ class ConfirmationDialog(pyxbmct.AddonDialogWindow):  # pylint: disable=too-many
         autoclose_label = pyxbmct.FadeLabel()
         self.placeControl(autoclose_label, 6, 0, columnspan=5)
         autoclose_label.addLabel(_('This window will close automatically after authorization.'))
-        self._cancel_btn = pyxbmct.Button(_('Cancel'))
+        self._cancel_btn = pyxbmct.Button(_('Cancel'))  # pylint: disable=attribute-defined-outside-init
         self.placeControl(self._cancel_btn, 7, 2, pad_x=-10, pad_y=10)
         self.setFocus(self._cancel_btn)
 

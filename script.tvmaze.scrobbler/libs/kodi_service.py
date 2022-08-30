@@ -27,8 +27,8 @@ from kodi_six import xbmc
 from kodi_six.xbmcaddon import Addon
 from six.moves import cPickle as pickle
 
-try:  # pylint: disable=ungrouped-imports
-    from kodi_six.xbmcvfs import translatePath
+try:
+    from kodi_six.xbmcvfs import translatePath  # pylint: disable=ungrouped-imports
 except (ImportError, AttributeError):
     from kodi_six.xbmc import translatePath
 
