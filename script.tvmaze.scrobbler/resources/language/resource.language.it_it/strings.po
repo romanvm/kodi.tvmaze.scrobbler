@@ -9,8 +9,8 @@ msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: \n"
 "PO-Revision-Date: \n"
-"Last-Translator: \n"
-"Language-Team: \n"
+"Last-Translator: nixxo\n"
+"Language-Team: nixxo\n"
 "MIME-Version: 1.0\n"
 "X-Generator: Poedit 3.0\n"
 
@@ -68,11 +68,11 @@ msgstr "Sincronizzazione degli episodi"
 
 msgctxt "#32013"
 msgid "Syncing episodes for show \"{show_name}\": {count}/{total}"
-msgstr "Sincronizzazione degli episodi per lo show \"{show_name}\": {count}/{total}"
+msgstr "Sincronizzazione degli episodi per la Serie \"{show_name}\": {count}/{total}"
 
 msgctxt "#32014"
 msgid "Sync all shows"
-msgstr "Sincronizza tutti gli show"
+msgstr "Sincronizza tutte le Serie"
 
 msgctxt "#32015"
 msgid "Sync completed"
@@ -140,7 +140,7 @@ msgstr "Libreria multimediale priva di episodi TV"
 
 msgctxt "#32031"
 msgid "Updating TV shows in Kodi: {} of {}"
-msgstr "Aggiornamento delle Serie Tv in Kodi: {} di {}"
+msgstr "Aggiornamento delle Serie TV in Kodi: {} di {}"
 
 msgctxt "#32032"
 msgid "Periodically pull watched episodes from TVmaze"
